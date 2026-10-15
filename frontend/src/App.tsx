@@ -34,6 +34,36 @@ function App() {
       </button>
 
       <p aria-live="polite">Backend status: {backendStatus}</p>
+
+      <section aria-labelledby="registration-heading">
+        <h2 id="registration-heading">Create your account</h2>
+
+        <p>Register a passkey to securely sign in.</p>
+
+        <form
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+          }}
+          onSubmit={(event) => {
+            event.preventDefault();
+            alert("Registration will be connected later.");
+          }}
+        >
+          <label htmlFor="username">Email or username</label>
+
+          <input
+            id="username"
+            name="username"
+           type="text"
+            required
+          />
+
+          <button type="submit">Register passkey</button>
+        </form>
+      </section>
+
     </main>
   );
 }
