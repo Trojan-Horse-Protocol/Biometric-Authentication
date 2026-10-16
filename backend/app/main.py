@@ -4,6 +4,7 @@ from urllib.request import Request
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -29,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class UserCredentials():
+class UserCredentials(BaseModel):
     username: str
     password: str
 
@@ -44,8 +45,8 @@ def root():
 
 @app.post("/login")
 def login(credentials: UserCredentials):
-    return {"status": "ok", "message": f"Logging in as {credentials.username}"}
+    return {"status": "ok", "username" : credentials.username}
 
 @app.post("/signup")
 def signup(credentials: UserCredentials):
-    return {"status": "ok", "message": f"Logging in as {credentials.username}"}
+    return {"status": "ok", "username" : credentials.username}
