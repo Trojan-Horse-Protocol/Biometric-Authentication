@@ -1,12 +1,15 @@
 import { useState } from "react";
 
+// Backend API configuration
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 function App() {
+  // Component state
   const [backendStatus, setBackendStatus] = useState("Not checked");
   const [view, setView] = useState<"register" | "login">("register");
 
+  // Check whether the backend is available
   async function checkBackend() {
     setBackendStatus("Checking...");
 
@@ -26,16 +29,26 @@ function App() {
   }
 
   return (
-    <main style={{ fontFamily: "system-ui", maxWidth: 720, margin: "4rem auto", padding: "0 1rem" }}>
+    <main
+      style={{
+        fontFamily: "system-ui",
+        maxWidth: 720,
+        margin: "4rem auto",
+        padding: "0 1rem"
+      }}
+    >
+      {/* Main application layout */}
       <h1>WebAuthn Project</h1>
       <p>Starter frontend for the club&apos;s passkey authentication project.</p>
 
+      {/* Development backend health check */}
       <button type="button" onClick={checkBackend}>
         Check backend health
       </button>
 
       <p aria-live="polite">Backend status: {backendStatus}</p>
 
+      {/* Registration view */}
       {view === "register" && (
         <section
           aria-labelledby="registration-heading"
@@ -91,8 +104,8 @@ function App() {
             <button type="submit">Register passkey</button>
           </form>
 
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => setView("login")}
             style = {{marginTop: "1rem"}}
           >
@@ -102,6 +115,7 @@ function App() {
         </section>
       )}
 
+      {/* Login view */}
       {view === "login" && (
         <section
           aria-labelledby="login-heading"
