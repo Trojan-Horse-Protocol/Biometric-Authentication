@@ -1,4 +1,5 @@
 import os
+from urllib.request import Request
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -33,3 +34,15 @@ app.add_middleware(
 def health_check() -> dict[str, str]:
     """Return a simple response used to verify that the API is running."""
     return {"status": "ok", "service": "webauthn-api"}
+
+@app.get("/")
+def root():
+    return {"Hello": "World"}
+
+@app.post("/login)")
+def login(request: Request):
+    return {"status": "ok"}
+
+@app.post("/signup")
+def signup(request: Request):
+    return {"status": "ok"}
