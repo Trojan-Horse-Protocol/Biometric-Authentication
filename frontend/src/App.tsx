@@ -35,14 +35,25 @@ function App() {
 
       <p aria-live="polite">Backend status: {backendStatus}</p>
 
-      <section aria-labelledby="registration-heading">
-        <h2 id="registration-heading">Create your account</h2>
+      <section
+        aria-labelledby="registration-heading"
+        style={{
+          border: "2px solid #222",
+          borderRadius: "12px",
+          padding: "2rem",
+          maxWidth: "420px",
+          margin: "2rem auto",
+          textAlign: "center",
+        }}
+      >
+        <h2 id="registration-heading">Create Your Account</h2>
 
         <p>Register a passkey to securely sign in.</p>
 
         <form
           style={{
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
             gap: "0.75rem",
           }}
@@ -51,14 +62,29 @@ function App() {
             alert("Registration will be connected later.");
           }}
         >
-          <label htmlFor="username">Email or username</label>
+          <div style={{ width: "280px" }}>
+            <label
+              htmlFor="username"
+              style={{
+                display: "block",
+                textAlign: "left",
+                marginBottom: "0.4rem",
+              }}
+             >
+              Email or Username:
+            </label>
 
-          <input
-            id="username"
-            name="username"
-           type="text"
-            required
-          />
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              style={{
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
 
           <button type="submit">Register passkey</button>
         </form>
