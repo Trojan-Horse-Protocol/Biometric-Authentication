@@ -5,6 +5,7 @@ const apiBaseUrl =
 
 function App() {
   const [backendStatus, setBackendStatus] = useState("Not checked");
+  const [view, setView] = useState<"register" | "login">("register");
 
   async function checkBackend() {
     setBackendStatus("Checking...");
@@ -40,7 +41,7 @@ function App() {
         style={{
           border: "2px solid #222",
           borderRadius: "12px",
-          padding: "2rem",
+          padding: "3rem",
           maxWidth: "420px",
           margin: "2rem auto",
           textAlign: "center",
@@ -55,7 +56,7 @@ function App() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: "0.75rem",
+            gap: "1rem",
           }}
           onSubmit={(event) => {
             event.preventDefault();
@@ -88,6 +89,15 @@ function App() {
 
           <button type="submit">Register passkey</button>
         </form>
+
+        <button 
+          type="button" 
+          onClick={() => setView("login")}
+          style = {{marginTop: "1rem"}}
+        >
+          Already have an account? Sign in
+        </button>
+
       </section>
 
     </main>
