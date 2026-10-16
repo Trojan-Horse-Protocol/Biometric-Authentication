@@ -36,69 +36,136 @@ function App() {
 
       <p aria-live="polite">Backend status: {backendStatus}</p>
 
-      <section
-        aria-labelledby="registration-heading"
-        style={{
-          border: "2px solid #222",
-          borderRadius: "12px",
-          padding: "3rem",
-          maxWidth: "420px",
-          margin: "2rem auto",
-          textAlign: "center",
-        }}
-      >
-        <h2 id="registration-heading">Create Your Account</h2>
-
-        <p>Register a passkey to securely sign in.</p>
-
-        <form
+      {view === "register" && (
+        <section
+          aria-labelledby="registration-heading"
           style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "1rem",
-          }}
-          onSubmit={(event) => {
-            event.preventDefault();
-            alert("Registration will be connected later.");
+            border: "2px solid #222",
+            borderRadius: "12px",
+            padding: "3rem",
+            maxWidth: "420px",
+            margin: "2rem auto",
+            textAlign: "center",
           }}
         >
-          <div style={{ width: "280px" }}>
-            <label
-              htmlFor="username"
-              style={{
-                display: "block",
-                textAlign: "left",
-                marginBottom: "0.4rem",
-              }}
-             >
-              Email or Username:
-            </label>
+          <h2 id="registration-heading">Create Your Account</h2>
 
-            <input
-              id="username"
-              name="username"
-              type="text"
-              required
-              style={{
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
+          <p>Register a passkey to securely sign in.</p>
 
-          <button type="submit">Register passkey</button>
-        </form>
+          <form
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+            onSubmit={(event) => {
+              event.preventDefault();
+              alert("Registration will be connected later.");
+            }}
+          >
+            <div style={{ width: "280px" }}>
+              <label
+                htmlFor="username"
+                style={{
+                  display: "block",
+                  textAlign: "left",
+                  marginBottom: "0.4rem",
+                }}
+              >
+                Email or Username:
+              </label>
 
-        <button 
-          type="button" 
-          onClick={() => setView("login")}
-          style = {{marginTop: "1rem"}}
+              <input
+                id="username"
+                name="username"
+                type="text"
+                required
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <button type="submit">Register passkey</button>
+          </form>
+
+          <button 
+            type="button" 
+            onClick={() => setView("login")}
+            style = {{marginTop: "1rem"}}
+          >
+            Already have an account? Sign in
+          </button>
+
+        </section>
+      )}
+
+      {view === "login" && (
+        <section
+          aria-labelledby="login-heading"
+          style={{
+            border: "2px solid #222",
+            borderRadius: "12px",
+            padding: "3rem",
+            maxWidth: "420px",
+            margin: "2rem auto",
+            textAlign: "center",
+          }}
         >
-          Already have an account? Sign in
-        </button>
+          <h2 id="login-heading">Welcome Back</h2>
 
-      </section>
+          <p>Sign in securely with your passkey.</p>
+
+          <form
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+            onSubmit={(event) => {
+              event.preventDefault();
+              alert("Login will be connected later.");
+            }}
+          >
+            <div style={{width: "280px"}}>
+              <label
+                htmlFor="login-username"
+                style={{
+                  display: "block",
+                  textAlign: "left",
+                  marginBottom: "0.4rem",
+                }}
+              >
+                Email or Username:
+              </label>
+
+              <input
+                id="login-username"
+                name="login-username"
+                type="text"
+                required
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <button type="submit">Sign in with passkey</button>
+          </form>
+
+          <button
+            type="button"
+            onClick={() => setView("register")}
+            style={{ marginTop: "1rem" }}
+          >
+            Need an account? Create one
+          </button>
+        </section>
+      )}
 
     </main>
   );
