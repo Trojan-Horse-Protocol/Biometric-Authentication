@@ -29,6 +29,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class UserCredentials():
+    username: str
+    password: str
 
 @app.get("/health", tags=["system"])
 def health_check() -> dict[str, str]:
@@ -39,10 +42,10 @@ def health_check() -> dict[str, str]:
 def root():
     return {"Hello": "World"}
 
-@app.post("/login)")
-def login(request: Request):
-    return {"status": "ok"}
+@app.post("/login")
+def login(credentials: UserCredentials):
+    return {"status": "ok", "message": f"Logging in as {credentials.username}"}
 
 @app.post("/signup")
-def signup(request: Request):
-    return {"status": "ok"}
+def signup(credentials: UserCredentials):
+    return {"status": "ok", "message": f"Logging in as {credentials.username}"}
