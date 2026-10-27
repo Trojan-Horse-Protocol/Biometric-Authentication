@@ -9,6 +9,16 @@ function App() {
   const [backendStatus, setBackendStatus] = useState("Not checked");
   const [view, setView] = useState<"register" | "login">("register");
 
+  // Registration status state
+  const [registrationStatus, setRegistrationStatus] = useState<
+    "idle" | "loading" | "success"
+  >("idle");
+
+  // Login status state
+  const [loginStatus, setLoginStatus] = useState<
+    "idle" | "loading" | "success"
+  >("idle");
+
   // Check whether the backend is available
   async function checkBackend() {
     setBackendStatus("Checking...");
@@ -74,7 +84,13 @@ function App() {
             }}
             onSubmit={(event) => {
               event.preventDefault();
-              alert("Registration will be connected later.");
+              
+              setRegistrationStatus("loading");
+
+              // temporarily simulates an asynchronous operation while the API is unavailable
+              window.setTimeout(() => {
+                setRegistrationStatus("success");
+              }, 1000);
             }}
           >
             <div style={{ width: "280px" }}>
@@ -101,8 +117,21 @@ function App() {
               />
             </div>
 
-            <button type="submit">Register passkey</button>
+            <button
+              type="submit"
+              disabled={registrationStatus === "loading"}
+            >
+              {registrationStatus === "loading"
+                ? "Registering..."
+                : "Register passkey"}
+            </button>
           </form>
+
+          <p aria-live="polite">
+            {registrationStatus === "loading" && "Preparing passkey registration..."}
+            {registrationStatus === "success" &&
+              "Registration complete."}
+          </p>
 
           <button
             type="button"
@@ -139,10 +168,17 @@ function App() {
               alignItems: "center",
               gap: "1rem",
             }}
+            // temporarily simulates the login process until the backend is connected
             onSubmit={(event) => {
               event.preventDefault();
-              alert("Login will be connected later.");
+              
+              setLoginStatus("loading");
+
+              window.setTimeout(() => {
+                setLoginStatus("success");
+              }, 1000);
             }}
+    
           >
             <div style={{width: "280px"}}>
               <label
@@ -168,8 +204,21 @@ function App() {
               />
             </div>
 
-            <button type="submit">Sign in with passkey</button>
+            <button 
+              type="submit"
+              disabled={loginStatus === "loading"}
+            >
+              {loginStatus === "loading"
+                ? "Signing in..."
+                : "Sign in with passkey"}
+            </button>
           </form>
+
+          <p aria-live="polite">
+            {loginStatus === "loading" && "Signing in..."}
+            {loginStatus === "success" &&
+              "Login complete."}
+          </p>
 
           <button
             type="button"
