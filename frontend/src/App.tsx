@@ -9,14 +9,18 @@ function App() {
   const [backendStatus, setBackendStatus] = useState("Not checked");
   const [view, setView] = useState<"register" | "login">("register");
 
+  // Error message state
+  const [registrationError, setRegistrationError] = useState("");
+  const [loginError, setLoginError] = useState("");
+
   // Registration status state
   const [registrationStatus, setRegistrationStatus] = useState<
-    "idle" | "loading" | "success"
+    "idle" | "loading" | "success" | "error"
   >("idle");
 
   // Login status state
   const [loginStatus, setLoginStatus] = useState<
-    "idle" | "loading" | "success"
+    "idle" | "loading" | "success" | "error"
   >("idle");
 
   // Check whether the backend is available
@@ -84,9 +88,8 @@ function App() {
             }}
             onSubmit={(event) => {
               event.preventDefault();
-              
+              setRegistrationError("");
               setRegistrationStatus("loading");
-
               // temporarily simulates an asynchronous operation while the API is unavailable
               window.setTimeout(() => {
                 setRegistrationStatus("success");
@@ -133,10 +136,14 @@ function App() {
               "Registration complete."}
           </p>
 
+          <p aria-live="assertive">
+            {registrationStatus === "error" && registrationError}
+          </p>
+
           <button
             type="button"
             onClick={() => setView("login")}
-            style = {{marginTop: "1rem"}}
+            style = {{ marginTop: "1rem"}}
           >
             Already have an account? Sign in
           </button>
@@ -171,9 +178,8 @@ function App() {
             // temporarily simulates the login process until the backend is connected
             onSubmit={(event) => {
               event.preventDefault();
-              
+              setLoginError("");
               setLoginStatus("loading");
-
               window.setTimeout(() => {
                 setLoginStatus("success");
               }, 1000);
@@ -218,6 +224,10 @@ function App() {
             {loginStatus === "loading" && "Signing in..."}
             {loginStatus === "success" &&
               "Login complete."}
+          </p>
+
+          <p aria-live="assertive">
+            {loginStatus === "error" && loginError}
           </p>
 
           <button
