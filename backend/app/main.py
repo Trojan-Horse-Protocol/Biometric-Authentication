@@ -43,7 +43,7 @@ def health_check() -> dict[str, str]:
 def root():
     return {"Hello": "World"}
 
-@app.post("/login")
+@app.get("/login")
 def login(credentials: UserCredentials):
     return {"status": "ok", "username" : credentials.username}
 
