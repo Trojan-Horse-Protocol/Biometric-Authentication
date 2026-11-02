@@ -37,8 +37,8 @@ USERNAME_RE = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 class UsernameInfo(BaseModel):
     username: str
-class Credentials(BaseModel):
-    username: dict
+class CredentialInfo(BaseModel):
+    credential: dict
 
 def stash_challenge(request: Request, challenge: bytes, **extra) -> None:
     request.session["ch"] = {"c": challenge.hex(), **extra}
@@ -51,8 +51,8 @@ def pop_challenge(request: Request) -> dict:
     ch["c"] = bytes.fromhex(ch["c"])
     return ch
 
-@router.post("/register/options")
-def register_options(body: UsernameInfo, request: Request, db: Session = Depends(get_db)):
+@router.post("/register/begin")
+def register_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_db)):
     if not USERNAME_RE.match(body.username):
         raise HTTPException(422, "Username must be 3-64 characters: letters, numbers, _ . -")
     if db.query(Users).filter_by(username=body.username).first():
@@ -71,4 +71,44 @@ def register_options(body: UsernameInfo, request: Request, db: Session = Depends
     )
 
     stash_challenge(request, opts.challenge, username=body.username, handle=handle.hex())
+    return json.loads(options_to_json(opts))
+
+@router.post("/register/finish")
+def register_finish(body: CredentialInfo, request: Request, db: Session = Depends(get_db)):
+    ch = pop_challenge(request)
+    try:
+        v = verify_registration_response(
+            credential=body.credential,
+            expected_challenge=ch["c"],
+            expected_rp_id=RP_ID,
+            expected_origin=ORIGIN,
+            require_user_verification=True,
+        )
+    except Exception:
+        raise HTTPException(400, "Registration failed")
+
+    role = "admin" if ch["username"] == ADMIN_USERNAME else "member"  # bootstrap admin
+    user = Users(username=ch["username"], handle=bytes.fromhex(ch["handle"]), role=role)
+    user.credentials.append(
+        Credential(
+            credential_id=v.credential_id,
+            public_key=v.credential_public_key,
+            sign_count=v.sign_count,
+        )
+    )
+    db.add(user)
+    db.commit()
+    request.session["uid"] = user.id
+    return {"ok": True, "username": user.username}
+
+@router.post("login/begin")
+def login_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_db)):
+    user = db.query(Users).filter_by(username=body.username).first()
+    allow = [PublicKeyCredentialDescriptor(id=credential.credential_id) for credential in user.credentials] if user else []
+    opts = generate_authentication_options(
+        rp_id=RP_ID,
+        allow_credentials=allow,
+        user_verification=UserVerificationRequirement.REQUIRED,
+    )
+    stash_challenge(request, opts.challenge)
     return json.loads(options_to_json(opts))
