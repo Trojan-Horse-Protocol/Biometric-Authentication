@@ -9,6 +9,7 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
 #Referenced https://docs.sqlalchemy.org/en/21/orm/quickstart.html#declare-models
+#           https://blog.miguelgrinberg.com/post/sqlalchemy-2-in-practice---chapter-8-sqlalchemy-and-the-web
 
 class Users(Base):
     __tablename__ = 'users'
