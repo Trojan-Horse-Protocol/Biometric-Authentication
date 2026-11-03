@@ -11,16 +11,18 @@ from sqlalchemy.orm import relationship
 #Referenced https://docs.sqlalchemy.org/en/21/orm/quickstart.html#declare-models
 #           https://blog.miguelgrinberg.com/post/sqlalchemy-2-in-practice---chapter-8-sqlalchemy-and-the-web
 
-class Users(Base):
+class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int]= mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
 
-    role: Mapped[str] = mapped_column(default="member")
     webauthn_user_id: Mapped[bytes] = mapped_column(LargeBinary(32), unique=True)
+    role: Mapped[str] = mapped_column(default="member")
 
-    credentials: Mapped[list["Credential"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    credentials: Mapped[list["Credential"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 class Credential(Base):
     __tablename__ = 'credentials'
@@ -29,8 +31,8 @@ class Credential(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     credential_id: Mapped[bytes] = mapped_column(LargeBinary, unique=True, index=True)
 
-    public_key: Mapped[str] = mapped_column(LargeBinary)
+    public_key: Mapped[bytes] = mapped_column(LargeBinary)
     signature: Mapped[int] = mapped_column(default=0)
     label: Mapped[str] = mapped_column(default="Passkey")
 
-    user: Mapped[Users] = relationship(back_populates="credentials")
+    user: Mapped[User] = relationship(back_populates="credentials")

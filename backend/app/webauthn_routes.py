@@ -15,7 +15,7 @@ from webauthn.helpers.structs import (
 )
 
 from database import get_db
-from model import Users, Credential
+from model import User, Credential
 
 from fastapi import APIRouter
 from fastapi import Depends
@@ -55,14 +55,14 @@ def pop_challenge(request: Request) -> dict:
 def register_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_db)):
     if not USERNAME_RE.match(body.username):
         raise HTTPException(422, "Username must be 3-64 characters: letters, numbers, _ . -")
-    if db.query(Users).filter_by(username=body.username).first():
+    if db.query(User).filter_by(username=body.username).first():
         raise HTTPException(409, "Username taken")
 
-    handle = secrets.token_bytes(32)
+    webauthn_user_id = secrets.token_bytes(32)
     opts = generate_registration_options(
         rp_id=RP_ID,
         rp_name=RP_NAME,
-        user_id=handle,
+        user_id=webauthn_user_id,
         user_name=body.username,
         authenticator_selection=AuthenticatorSelectionCriteria(
             resident_key=ResidentKeyRequirement.PREFERRED,
@@ -70,11 +70,11 @@ def register_begin(body: UsernameInfo, request: Request, db: Session = Depends(g
         ),
     )
 
-    stash_challenge(request, opts.challenge, username=body.username, handle=handle.hex())
+    stash_challenge(request, opts.challenge, username=body.username, webauthn_user_id=webauthn_user_id.hex())
     return json.loads(options_to_json(opts))
 
-@router.post("/register/finish")
-def register_finish(body: CredentialInfo, request: Request, db: Session = Depends(get_db)):
+@router.post("/register/verify")
+def register_verify(body: CredentialInfo, request: Request, db: Session = Depends(get_db)):
     ch = pop_challenge(request)
     try:
         v = verify_registration_response(
@@ -87,13 +87,13 @@ def register_finish(body: CredentialInfo, request: Request, db: Session = Depend
     except Exception:
         raise HTTPException(400, "Registration failed")
 
-    role = "admin" if ch["username"] == ADMIN_USERNAME else "member"  # bootstrap admin
-    user = Users(username=ch["username"], handle=bytes.fromhex(ch["handle"]), role=role)
+    role = "admin" if ch["username"] == ADMIN_USERNAME else "member"
+    user = User(username=ch["username"], webauthn_user_id=bytes.fromhex(ch["handle"]), role=role)
     user.credentials.append(
         Credential(
             credential_id=v.credential_id,
             public_key=v.credential_public_key,
-            sign_count=v.sign_count,
+            signature=v.signature,
         )
     )
     db.add(user)
@@ -103,7 +103,7 @@ def register_finish(body: CredentialInfo, request: Request, db: Session = Depend
 
 @router.post("login/begin")
 def login_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_db)):
-    user = db.query(Users).filter_by(username=body.username).first()
+    user = db.query(User).filter_by(username=body.username).first()
     allow = [PublicKeyCredentialDescriptor(id=credential.credential_id) for credential in user.credentials] if user else []
     opts = generate_authentication_options(
         rp_id=RP_ID,
@@ -112,3 +112,33 @@ def login_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_
     )
     stash_challenge(request, opts.challenge)
     return json.loads(options_to_json(opts))
+
+@router.post("/login/verify")
+def login_verify(body: CredentialInfo, request: Request, db: Session = Depends(get_db)):
+    ch = pop_challenge(request)
+    try:
+        raw_id = base64url_to_bytes(body.credential["rawId"])
+    except Exception:
+        raise HTTPException(400, "Malformed credential")
+
+    cred = db.query(Credential).filter_by(credential_id=raw_id).first()
+    if not cred:
+        raise HTTPException(401, "Authentication failed")
+
+    try:
+        v = verify_authentication_response(
+            credential=body.credential,
+            expected_challenge=ch["c"],
+            expected_rp_id=RP_ID,
+            expected_origin=ORIGIN,
+            credential_public_key=cred.public_key,
+            credential_current_sign_count=cred.signature,
+            require_user_verification=True,
+        )
+    except Exception:
+        raise HTTPException(401, "Authentication failed")
+
+    cred.signature = v.new_sign_count
+    db.commit()
+    request.session["uid"] = cred.user_id
+    return {"ok": True, "username": cred.user.username, "role": cred.user.role}
