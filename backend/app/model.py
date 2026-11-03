@@ -17,12 +17,10 @@ class User(Base):
     id: Mapped[int]= mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
 
-    webauthn_user_id: Mapped[bytes] = mapped_column(LargeBinary(32), unique=True)
     role: Mapped[str] = mapped_column(default="member")
+    handle: Mapped[bytes] = mapped_column(LargeBinary(32), unique=True)
 
-    credentials: Mapped[list["Credential"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    credentials: Mapped[list["Credential"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 class Credential(Base):
     __tablename__ = 'credentials'
@@ -32,7 +30,7 @@ class Credential(Base):
     credential_id: Mapped[bytes] = mapped_column(LargeBinary, unique=True, index=True)
 
     public_key: Mapped[bytes] = mapped_column(LargeBinary)
-    signature: Mapped[int] = mapped_column(default=0)
+    sign_count: Mapped[int] = mapped_column(default=0)
     label: Mapped[str] = mapped_column(default="Passkey")
 
-    user: Mapped[User] = relationship(back_populates="credentials")
+    user: Mapped["User"] = relationship(back_populates="credentials")
