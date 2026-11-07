@@ -86,14 +86,22 @@ function App() {
               alignItems: "center",
               gap: "1rem",
             }}
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
               setRegistrationError("");
               setRegistrationStatus("loading");
-              // temporarily simulates an asynchronous operation while the API is unavailable
-              window.setTimeout(() => {
-                setRegistrationStatus("success");
-              }, 1000);
+
+              const formData = new FormData(event.currentTarget);
+              const username = String(formData.get("username") ?? "");
+
+              try {
+                // temporary, waiting for API format
+                throw new Error("Registration API is not connected yet.");
+              } catch (error) {
+                console.error(error);
+                setRegistrationStatus("error");
+                setRegistrationError("Registration could not be completed.");
+              }
             }}
           >
             <div style={{ width: "280px" }}>
@@ -143,7 +151,7 @@ function App() {
           <button
             type="button"
             onClick={() => setView("login")}
-            style = {{ marginTop: "1rem"}}
+            style={{ marginTop: "1rem" }}
           >
             Already have an account? Sign in
           </button>
