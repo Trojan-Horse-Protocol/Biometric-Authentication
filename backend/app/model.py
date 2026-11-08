@@ -34,3 +34,16 @@ class Credential(Base):
     label: Mapped[str] = mapped_column(default="Passkey")
 
     user: Mapped["User"] = relationship(back_populates="credentials")
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(default=None)
+    username: Mapped[str | None] = mapped_column(default=None)
+
+    event: Mapped[str]
+    success: Mapped[bool]
+
+    ip: Mapped[str | None] = mapped_column(default=None)
+    detail: Mapped[str | None] = mapped_column(default=None)
