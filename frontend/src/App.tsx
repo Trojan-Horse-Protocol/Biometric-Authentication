@@ -95,7 +95,7 @@ function App() {
               const username = String(formData.get("username") ?? "");
 
               try {
-                // temporary, waiting for API format
+                // HORSE-39 placeholder:
                 throw new Error("Registration API is not connected yet.");
               } catch (error) {
                 console.error(error);
@@ -183,18 +183,26 @@ function App() {
               alignItems: "center",
               gap: "1rem",
             }}
-            // temporarily simulates the login process until the backend is connected
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
               setLoginError("");
               setLoginStatus("loading");
-              window.setTimeout(() => {
-                setLoginStatus("success");
-              }, 1000);
+
+              const formData = new FormData(event.currentTarget);
+              const username = String(formData.get("login-username") ?? "");
+
+              try {
+                // HORSE-40 placeholder:
+                throw new Error("Authentication API is not connected yet.");
+              } catch (error) {
+                console.error(error);
+                setLoginStatus("error");
+                setLoginError("Login could not be completed.");
+              }
             }}
     
           >
-            <div style={{width: "280px"}}>
+            <div style={{ width: "280px" }}>
               <label
                 htmlFor="login-username"
                 style={{
