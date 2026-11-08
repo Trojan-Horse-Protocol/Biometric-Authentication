@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..database import get_db
-from ..deps import current_user
+from ..dependencies import current_user
 from ..model import Credential
 
 router = APIRouter(prefix="/account")
@@ -13,7 +13,7 @@ def me(user=Depends(current_user)):
 
 @router.delete("/passkeys/{cid}")
 def remove(cid: int, user=Depends(current_user), db=Depends(get_db)):
-    cred = db.query(Credential).filter_by(id=cid, user_id=user.id).first()  # scoped to owner
+    cred = db.query(Credential).filter_by(id=cid, user_id=user.id).first()
     if not cred: raise HTTPException(404)
     if len(user.credentials) == 1: raise HTTPException(400, "Can't remove your last passkey")
     db.delete(cred); db.commit()
