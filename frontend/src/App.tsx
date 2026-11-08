@@ -8,6 +8,9 @@ function App() {
   // Component state
   const [backendStatus, setBackendStatus] = useState("Not checked");
   const [view, setView] = useState<"register" | "login">("register");
+  // Temporary client-side state.
+  // Set to true after the backend verifies authentication
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Error message state
   const [registrationError, setRegistrationError] = useState("");
@@ -53,7 +56,7 @@ function App() {
     >
       {/* Main application layout */}
       <h1>WebAuthn Project</h1>
-      <p>Starter frontend for the club&apos;s passkey authentication project.</p>
+      <p>Placeholder description.</p>
 
       {/* Development backend health check */}
       <button type="button" onClick={checkBackend}>
@@ -61,9 +64,40 @@ function App() {
       </button>
 
       <p aria-live="polite">Backend status: {backendStatus}</p>
+      {isLoggedIn && (
+        <section
+          aria-labelledby="home-heading"
+          style={{
+            border: "2px solid #222",
+            borderRadius: "12px",
+            padding: "3rem",
+            maxWidth: "420px",
+            margin: "2rem auto",
+            textAlign: "center",
+          }}
+        >
+          <h2 id="home-heading">Welcome</h2>
+
+          <p>You are signed in with your passkey.</p>
+
+          <p>This is a placeholder.</p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsLoggedIn(false);
+              setLoginStatus("idle");
+              setLoginError("");
+              setView("login");
+            }}
+          >
+            Log out
+          </button>
+        </section>
+      )}
 
       {/* Registration view */}
-      {view === "register" && (
+      {!isLoggedIn && view === "register" && (
         <section
           aria-labelledby="registration-heading"
           style={{
@@ -93,6 +127,7 @@ function App() {
 
               const formData = new FormData(event.currentTarget);
               const username = String(formData.get("username") ?? "");
+              // TODO(HORSE-41): Send username to the FastAPI registration endpoint.
 
               try {
                 // HORSE-39 placeholder:
@@ -160,7 +195,7 @@ function App() {
       )}
 
       {/* Login view */}
-      {view === "login" && (
+      {!isLoggedIn && view === "login" && (
         <section
           aria-labelledby="login-heading"
           style={{
@@ -190,6 +225,7 @@ function App() {
 
               const formData = new FormData(event.currentTarget);
               const username = String(formData.get("login-username") ?? "");
+              // TODO(HORSE-41): Send username to the FastAPI authentication endpoint.
 
               try {
                 // HORSE-40 placeholder:
@@ -200,7 +236,7 @@ function App() {
                 setLoginError("Login could not be completed.");
               }
             }}
-    
+
           >
             <div style={{ width: "280px" }}>
               <label
