@@ -1,52 +1,43 @@
 import os
-from urllib.request import Request
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
+
+from .database import Base, engine
 
 load_dotenv()
 
 
 def get_allowed_origins() -> list[str]:
-    configured_origins = os.getenv(
-        "BACKEND_CORS_ORIGINS", "http://localhost:5173"
-    )
-    return [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+    configured_origins = os.getenv("BACKEND_CORS_ORIGINS", "http://localhost:5173")
+    return [o.strip() for o in configured_origins.split(",") if o.strip()]
 
+Base.metadata.create_all(engine)
 
 app = FastAPI(
     title="WebAuthn Project API",
     version="0.1.0",
-    description="Starter API for the club's WebAuthn project.",
+    description="Passkey-protected club portal API.",
 )
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ["SESSION_SECRET"],
+    https_only=False,
+    same_site="lax",
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
-class UserCredentials(BaseModel):
-    username: str
-    password: str
+app.include_router(auth.router)
 
 @app.get("/health", tags=["system"])
 def health_check() -> dict[str, str]:
-    """Return a simple response used to verify that the API is running."""
     return {"status": "ok", "service": "webauthn-api"}
-
-@app.get("/")
-def root():
-    return {"Hello": "World"}
-
-@app.get("/login")
-def login(credentials: UserCredentials):
-    return {"status": "ok", "username" : credentials.username}
-
-@app.post("/signup")
-def signup(credentials: UserCredentials):
-    return {"status": "ok", "username" : credentials.username}
