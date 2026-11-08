@@ -6,27 +6,16 @@ from contextlib import closing
 from datetime import datetime, timezone, timedelta
 
 
-# --------------------------------------------------
-# DATABASE CONFIGURATION
-# --------------------------------------------------
-
-# Database file is located in the same folder as this Python file.
 DB_PATH = Path(__file__).resolve().parent / "webauthdatabaseSLP.db"
 
-
-# --------------------------------------------------
-# DATABASE CONNECTION
-# --------------------------------------------------
 
 def get_connection():
     db = sqlite3.connect(DB_PATH, timeout=5.0)
     db.execute("PRAGMA foreign_keys = ON")
     return db
 
-
-# --------------------------------------------------
+ 
 # DATABASE INITIALIZATION
-# --------------------------------------------------
 
 def initialize_database():
     with closing(get_connection()) as db:
@@ -234,8 +223,6 @@ def delete_expired_challenges():
             """, (current_time,))
 
             return cursor.rowcount
-
-# --------------------------------------------------
 
 if __name__ == "__main__":
     initialize_database()
