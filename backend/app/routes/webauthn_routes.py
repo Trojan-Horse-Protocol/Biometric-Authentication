@@ -1,4 +1,9 @@
-import os, json, re, secrets
+import json
+import secrets
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from webauthn import (
     generate_authentication_options,
     generate_registration_options,
@@ -14,18 +19,9 @@ from webauthn.helpers.structs import (
     UserVerificationRequirement,
 )
 
-from ..database import get_db
-from ..model import User, Credential, AuditEvent
 from ..config import settings
-
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import HTTPException
-from fastapi import Request
-
-from pydantic import BaseModel
-
-from sqlalchemy.orm import Session
+from ..database import get_db
+from ..model import AuditEvent, Credential, User
 
 router = APIRouter(prefix="/authentication", tags=["auth"])
 
@@ -76,13 +72,13 @@ def register_verify(body: CredentialInfo, request: Request, db: Session = Depend
             expected_rp_id=settings.rp_id, expected_origin=settings.origin,
             require_user_verification=True)
     except Exception as e:
-        audit(db, "register_fail", False, request=request, detail=str(e));
+        audit(db, "register_fail", False, request=request, detail=str(e))
         raise HTTPException(400, "Registration failed")
     role = "admin" if ch["username"] == settings.admin_username else "member"  # bootstrap admin
     user = User(username=ch["username"], handle=bytes.fromhex(ch["handle"]), role=role)
     user.credentials.append(Credential(credential_id=v.credential_id,
                                        public_key=v.credential_public_key, sign_count=v.sign_count))
-    db.add(user);
+    db.add(user)
     db.commit()
     request.session["uid"] = user.id
     audit(db, "register_ok", True, user, request)
@@ -100,7 +96,6 @@ def login_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_
 @router.post("/login/verify")
 def login_verify(body: CredentialInfo, request: Request, db: Session = Depends(get_db)):
     ch = pop_challenge(request)
-    from webauthn.helpers import base64url_to_bytes
     raw_id = base64url_to_bytes(body.credential["rawId"])
     cred = db.query(Credential).filter_by(credential_id=raw_id).first()
     if not cred:
@@ -114,9 +109,9 @@ def login_verify(body: CredentialInfo, request: Request, db: Session = Depends(g
             credential_public_key=cred.public_key, credential_current_sign_count=cred.sign_count,
             require_user_verification=True)
     except Exception as e:
-        audit(db, "login_fail", False, user, request, str(e));
+        audit(db, "login_fail", False, user, request, str(e))
         raise HTTPException(401, "Authentication failed")
-    cred.sign_count = v.new_sign_count;
+    cred.sign_count = v.new_sign_count
     db.commit()
     request.session["uid"] = user.id
     audit(db, "login_ok", True, user, request)

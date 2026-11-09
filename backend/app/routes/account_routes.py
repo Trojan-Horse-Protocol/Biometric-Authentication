@@ -9,7 +9,7 @@ router = APIRouter(prefix="/account")
 @router.get("")
 def me(user=Depends(current_user)):
     return {"username": user.username, "role": user.role,
-            "passkeys": [{"id": c.id, "label": c.label, "created_at": c.created_at} for c in user.credentials]}
+            "passkeys": [{"id": c.id, "label": c.label} for c in user.credentials]}
 
 @router.delete("/passkeys/{cid}")
 def remove(cid: int, user=Depends(current_user), db=Depends(get_db)):
