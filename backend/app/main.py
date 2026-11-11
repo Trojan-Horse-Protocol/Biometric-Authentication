@@ -6,6 +6,8 @@ from .config import settings
 from .database import Base, engine
 from .routes import webauthn_routes
 
+from .routes import account_routes, admin_routes, recovery, webauthn_routes
+
 Base.metadata.create_all(engine)
 
 app = FastAPI(
@@ -17,9 +19,11 @@ app = FastAPI(
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret,
-    https_only=False,  #set True in production
+    https_only=settings.cookie_secure,
+    max_age=8 * 3600,
     same_site="lax",
 )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -27,6 +31,11 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
+
+app.include_router(webauthn_routes.router)
+app.include_router(account_routes.router)
+app.include_router(admin_routes.router)
+app.include_router(recovery.router)
 
 app.include_router(webauthn_routes.router)
 
