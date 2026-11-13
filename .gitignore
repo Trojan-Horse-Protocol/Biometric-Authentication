@@ -16,6 +16,7 @@ ENV/
 .ruff_cache/
 .coverage
 htmlcov/
+coverage/
 
 # Environment files and secrets
 .env

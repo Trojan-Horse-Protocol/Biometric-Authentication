@@ -1,4 +1,7 @@
 fastapi
 uvicorn[standard]
 python-dotenv
+itsdangerous
+pydantic-settings
+SQLAlchemy>=2.0
 webauthn
