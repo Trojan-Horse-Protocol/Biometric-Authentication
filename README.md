@@ -39,6 +39,11 @@ Copy-Item .env.example .env
 
 Do not commit `.env`. It is ignored by Git.
 
+Generate a secret for the `.env` file:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
 ## 3. Start the FastAPI backend
 
 From the repository root:

@@ -37,8 +37,6 @@ app.include_router(account_routes.router)
 app.include_router(admin_routes.router)
 app.include_router(recovery.router)
 
-app.include_router(webauthn_routes.router)
-
 @app.get("/health", tags=["system"])
 def health_check() -> dict[str, str]:
     return {"status": "ok", "service": "webauthn-api"}
