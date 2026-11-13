@@ -8,6 +8,23 @@ function App() {
   // Component state
   const [backendStatus, setBackendStatus] = useState("Not checked");
   const [view, setView] = useState<"register" | "login">("register");
+  // Temporary client-side state.
+  // Set to true after the backend verifies authentication
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Error message state
+  const [registrationError, setRegistrationError] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  // Registration status state
+  const [registrationStatus, setRegistrationStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+
+  // Login status state
+  const [loginStatus, setLoginStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
 
   // Check whether the backend is available
   async function checkBackend() {
@@ -39,7 +56,7 @@ function App() {
     >
       {/* Main application layout */}
       <h1>WebAuthn Project</h1>
-      <p>Starter frontend for the club&apos;s passkey authentication project.</p>
+      <p>Placeholder description.</p>
 
       {/* Development backend health check */}
       <button type="button" onClick={checkBackend}>
@@ -47,9 +64,40 @@ function App() {
       </button>
 
       <p aria-live="polite">Backend status: {backendStatus}</p>
+      {isLoggedIn && (
+        <section
+          aria-labelledby="home-heading"
+          style={{
+            border: "2px solid #222",
+            borderRadius: "12px",
+            padding: "3rem",
+            maxWidth: "420px",
+            margin: "2rem auto",
+            textAlign: "center",
+          }}
+        >
+          <h2 id="home-heading">Welcome</h2>
+
+          <p>You are signed in with your passkey.</p>
+
+          <p>This is a placeholder.</p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsLoggedIn(false);
+              setLoginStatus("idle");
+              setLoginError("");
+              setView("login");
+            }}
+          >
+            Log out
+          </button>
+        </section>
+      )}
 
       {/* Registration view */}
-      {view === "register" && (
+      {!isLoggedIn && view === "register" && (
         <section
           aria-labelledby="registration-heading"
           style={{
@@ -72,9 +120,23 @@ function App() {
               alignItems: "center",
               gap: "1rem",
             }}
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              alert("Registration will be connected later.");
+              setRegistrationError("");
+              setRegistrationStatus("loading");
+
+              const formData = new FormData(event.currentTarget);
+              const username = String(formData.get("username") ?? "");
+              // TODO(HORSE-41): Send username to the FastAPI registration endpoint.
+
+              try {
+                // HORSE-39 placeholder:
+                throw new Error("Registration API is not connected yet.");
+              } catch (error) {
+                console.error(error);
+                setRegistrationStatus("error");
+                setRegistrationError("Registration could not be completed.");
+              }
             }}
           >
             <div style={{ width: "280px" }}>
@@ -101,13 +163,30 @@ function App() {
               />
             </div>
 
-            <button type="submit">Register passkey</button>
+            <button
+              type="submit"
+              disabled={registrationStatus === "loading"}
+            >
+              {registrationStatus === "loading"
+                ? "Registering..."
+                : "Register passkey"}
+            </button>
           </form>
+
+          <p aria-live="polite">
+            {registrationStatus === "loading" && "Preparing passkey registration..."}
+            {registrationStatus === "success" &&
+              "Registration complete."}
+          </p>
+
+          <p aria-live="assertive">
+            {registrationStatus === "error" && registrationError}
+          </p>
 
           <button
             type="button"
             onClick={() => setView("login")}
-            style = {{marginTop: "1rem"}}
+            style={{ marginTop: "1rem" }}
           >
             Already have an account? Sign in
           </button>
@@ -116,7 +195,7 @@ function App() {
       )}
 
       {/* Login view */}
-      {view === "login" && (
+      {!isLoggedIn && view === "login" && (
         <section
           aria-labelledby="login-heading"
           style={{
@@ -139,12 +218,27 @@ function App() {
               alignItems: "center",
               gap: "1rem",
             }}
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              alert("Login will be connected later.");
+              setLoginError("");
+              setLoginStatus("loading");
+
+              const formData = new FormData(event.currentTarget);
+              const username = String(formData.get("login-username") ?? "");
+              // TODO(HORSE-41): Send username to the FastAPI authentication endpoint.
+
+              try {
+                // HORSE-40 placeholder:
+                throw new Error("Authentication API is not connected yet.");
+              } catch (error) {
+                console.error(error);
+                setLoginStatus("error");
+                setLoginError("Login could not be completed.");
+              }
             }}
+
           >
-            <div style={{width: "280px"}}>
+            <div style={{ width: "280px" }}>
               <label
                 htmlFor="login-username"
                 style={{
@@ -168,8 +262,25 @@ function App() {
               />
             </div>
 
-            <button type="submit">Sign in with passkey</button>
+            <button 
+              type="submit"
+              disabled={loginStatus === "loading"}
+            >
+              {loginStatus === "loading"
+                ? "Signing in..."
+                : "Sign in with passkey"}
+            </button>
           </form>
+
+          <p aria-live="polite">
+            {loginStatus === "loading" && "Signing in..."}
+            {loginStatus === "success" &&
+              "Login complete."}
+          </p>
+
+          <p aria-live="assertive">
+            {loginStatus === "error" && loginError}
+          </p>
 
           <button
             type="button"
