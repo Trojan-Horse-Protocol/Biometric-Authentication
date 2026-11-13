@@ -39,7 +39,7 @@ Copy-Item .env.example .env
 
 Do not commit `.env`. It is ignored by Git.
 
-Generate a secret for the `.env` file:
+Generate a secret to add into the `.env` file:
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
@@ -92,25 +92,3 @@ npm run dev
 Open the URL printed by Vite, normally http://localhost:5173.
 
 The frontend includes a button that checks the backend health endpoint.
-
-## Development workflow
-
-1. Create a branch for a Jira task.
-2. Make a small change.
-3. Run the backend and frontend locally.
-4. Open a pull request for review.
-5. Include the Jira task key in the pull request title.
-
-Example branch:
-
-```text
-WEBAUTHN-8-fastapi-health-endpoint
-```
-
-## Current limitations
-
-- No WebAuthn registration or authentication yet
-- No database yet
-- No user accounts or roles yet
-- No production deployment yet
-- The backend currently allows the local Vite development origin only
