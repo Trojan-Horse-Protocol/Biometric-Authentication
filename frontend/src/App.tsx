@@ -4,6 +4,34 @@ import { useState } from "react";
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+  // Helper functions for converting the browser's credential into FastAPI format
+  function base64UrlToUint8Array(value: string): Uint8Array {
+    const padding = "=".repeat((4 - (value.length % 4)) % 4);
+    const base64 = (value + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const binary = window.atob(base64);
+  
+    return Uint8Array.from(binary, (character) =>
+      character.charCodeAt(0),
+    );
+  }
+  
+  function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+  
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+  
+    return window
+      .btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }
+
 function App() {
   // Component state
   const [backendStatus, setBackendStatus] = useState("Not checked");
@@ -127,11 +155,82 @@ function App() {
 
               const formData = new FormData(event.currentTarget);
               const username = String(formData.get("username") ?? "");
-              // TODO(HORSE-41): Send username to the FastAPI registration endpoint.
 
               try {
-                // HORSE-39 placeholder:
-                throw new Error("Registration API is not connected yet.");
+                const beginResponse = await fetch(
+                  `${apiBaseUrl}/authentication/register/begin`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({ username }),
+                  },
+                );
+              
+                if (!beginResponse.ok) {
+                  throw new Error("Could not begin registration.");
+                }
+              
+                const registrationOptions = await beginResponse.json();
+              
+                const publicKeyOptions = {
+                  ...registrationOptions,
+                  challenge: base64UrlToUint8Array(registrationOptions.challenge),
+                  user: {
+                    ...registrationOptions.user,
+                    id: base64UrlToUint8Array(registrationOptions.user.id),
+                  },
+                  excludeCredentials: registrationOptions.excludeCredentials?.map(
+                    (credential: { id: string; type: string }) => ({
+                      ...credential,
+                      id: base64UrlToUint8Array(credential.id),
+                    }),
+                  ),
+                } as PublicKeyCredentialCreationOptions;
+              
+                const credential = await navigator.credentials.create({
+                  publicKey: publicKeyOptions,
+                });
+              
+                if (!(credential instanceof PublicKeyCredential)) {
+                  throw new Error("No passkey credential was created.");
+                }
+              
+                const attestation = credential.response as AuthenticatorAttestationResponse;
+              
+                const credentialPayload = {
+                  id: credential.id,
+                  rawId: arrayBufferToBase64Url(credential.rawId),
+                  type: credential.type,
+                  response: {
+                    clientDataJSON: arrayBufferToBase64Url(attestation.clientDataJSON),
+                    attestationObject: arrayBufferToBase64Url(
+                      attestation.attestationObject,
+                    ),
+                  },
+                };
+              
+                const verifyResponse = await fetch(
+                  `${apiBaseUrl}/authentication/register/verify`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                      credential: credentialPayload,
+                    }),
+                  },
+                );
+              
+                if (!verifyResponse.ok) {
+                  throw new Error("Registration verification failed.");
+                }
+                
+                setRegistrationStatus("success");
               } catch (error) {
                 console.error(error);
                 setRegistrationStatus("error");
