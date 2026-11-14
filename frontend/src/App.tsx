@@ -4,7 +4,7 @@ import { useState } from "react";
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
-  // Helper functions for converting the browser's credential into FastAPI format
+  // Converts WebAuthn credential data for the backend.
   function base64UrlToUint8Array(value: string): Uint8Array {
     const padding = "=".repeat((4 - (value.length % 4)) % 4);
     const base64 = (value + padding)
@@ -36,8 +36,7 @@ function App() {
   // Component state
   const [backendStatus, setBackendStatus] = useState("Not checked");
   const [view, setView] = useState<"register" | "login">("register");
-  // Temporary client-side state.
-  // Set to true after the backend verifies authentication
+  // Controls whether the logged-in home page is displayed.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Error message state
@@ -112,7 +111,12 @@ function App() {
 
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
+              await fetch(`${apiBaseUrl}/authentication/logout`, {
+                method: "POST",
+                credentials: "include",
+              });
+
               setIsLoggedIn(false);
               setLoginStatus("idle");
               setLoginError("");
@@ -400,6 +404,7 @@ function App() {
                 }
 
                 setLoginStatus("success");
+                setIsLoggedIn(true);
               } catch (error) {
                 console.error(error);
                 setLoginStatus("error");
