@@ -4,12 +4,39 @@ import { useState } from "react";
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+  // Converts WebAuthn credential data for the backend.
+  function base64UrlToUint8Array(value: string): Uint8Array {
+    const padding = "=".repeat((4 - (value.length % 4)) % 4);
+    const base64 = (value + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const binary = window.atob(base64);
+  
+    return Uint8Array.from(binary, (character) =>
+      character.charCodeAt(0),
+    );
+  }
+  
+  function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+  
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+  
+    return window
+      .btoa(binary)
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }
+
 function App() {
   // Component state
   const [backendStatus, setBackendStatus] = useState("Not checked");
   const [view, setView] = useState<"register" | "login">("register");
-  // Temporary client-side state.
-  // Set to true after the backend verifies authentication
+  // Controls whether the logged-in home page is displayed.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Error message state
@@ -84,7 +111,12 @@ function App() {
 
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
+              await fetch(`${apiBaseUrl}/authentication/logout`, {
+                method: "POST",
+                credentials: "include",
+              });
+
               setIsLoggedIn(false);
               setLoginStatus("idle");
               setLoginError("");
@@ -127,11 +159,82 @@ function App() {
 
               const formData = new FormData(event.currentTarget);
               const username = String(formData.get("username") ?? "");
-              // TODO(HORSE-41): Send username to the FastAPI registration endpoint.
 
               try {
-                // HORSE-39 placeholder:
-                throw new Error("Registration API is not connected yet.");
+                const beginResponse = await fetch(
+                  `${apiBaseUrl}/authentication/register/begin`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({ username }),
+                  },
+                );
+              
+                if (!beginResponse.ok) {
+                  throw new Error("Could not begin registration.");
+                }
+              
+                const registrationOptions = await beginResponse.json();
+              
+                const publicKeyOptions = {
+                  ...registrationOptions,
+                  challenge: base64UrlToUint8Array(registrationOptions.challenge),
+                  user: {
+                    ...registrationOptions.user,
+                    id: base64UrlToUint8Array(registrationOptions.user.id),
+                  },
+                  excludeCredentials: registrationOptions.excludeCredentials?.map(
+                    (credential: { id: string; type: string }) => ({
+                      ...credential,
+                      id: base64UrlToUint8Array(credential.id),
+                    }),
+                  ),
+                } as PublicKeyCredentialCreationOptions;
+              
+                const credential = await navigator.credentials.create({
+                  publicKey: publicKeyOptions,
+                });
+              
+                if (!(credential instanceof PublicKeyCredential)) {
+                  throw new Error("No passkey credential was created.");
+                }
+              
+                const attestation = credential.response as AuthenticatorAttestationResponse;
+              
+                const credentialPayload = {
+                  id: credential.id,
+                  rawId: arrayBufferToBase64Url(credential.rawId),
+                  type: credential.type,
+                  response: {
+                    clientDataJSON: arrayBufferToBase64Url(attestation.clientDataJSON),
+                    attestationObject: arrayBufferToBase64Url(
+                      attestation.attestationObject,
+                    ),
+                  },
+                };
+              
+                const verifyResponse = await fetch(
+                  `${apiBaseUrl}/authentication/register/verify`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                      credential: credentialPayload,
+                    }),
+                  },
+                );
+              
+                if (!verifyResponse.ok) {
+                  throw new Error("Registration verification failed.");
+                }
+                
+                setRegistrationStatus("success");
               } catch (error) {
                 console.error(error);
                 setRegistrationStatus("error");
@@ -225,18 +328,89 @@ function App() {
 
               const formData = new FormData(event.currentTarget);
               const username = String(formData.get("login-username") ?? "");
-              // TODO(HORSE-41): Send username to the FastAPI authentication endpoint.
 
               try {
-                // HORSE-40 placeholder:
-                throw new Error("Authentication API is not connected yet.");
+                const beginResponse = await fetch(
+                  `${apiBaseUrl}/authentication/login/begin`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({ username }),
+                  },
+                );
+
+                if (!beginResponse.ok) {
+                  throw new Error("Could not begin login.");
+                }
+
+                const loginOptions = await beginResponse.json();
+
+                const publicKeyOptions = {
+                  ...loginOptions,
+                  challenge: base64UrlToUint8Array(loginOptions.challenge),
+                  allowCredentials: loginOptions.allowCredentials?.map(
+                    (credential: { id: string; type: string }) => ({
+                      ...credential,
+                      id: base64UrlToUint8Array(credential.id),
+                    }),
+                  ),
+                } as PublicKeyCredentialRequestOptions;
+
+                const credential = await navigator.credentials.get({
+                  publicKey: publicKeyOptions,
+                });
+
+                if (!(credential instanceof PublicKeyCredential)) {
+                  throw new Error("No passkey credential was provided.");
+                }
+
+                const assertion = credential.response as AuthenticatorAssertionResponse;
+
+                const credentialPayload = {
+                  id: credential.id,
+                  rawId: arrayBufferToBase64Url(credential.rawId),
+                  type: credential.type,
+                  response: {
+                    clientDataJSON: arrayBufferToBase64Url(assertion.clientDataJSON),
+                    authenticatorData: arrayBufferToBase64Url(
+                      assertion.authenticatorData,
+                    ),
+                    signature: arrayBufferToBase64Url(assertion.signature),
+                    userHandle: assertion.userHandle
+                      ? arrayBufferToBase64Url(assertion.userHandle)
+                      : null,
+                  },
+                };
+
+                const verifyResponse = await fetch(
+                  `${apiBaseUrl}/authentication/login/verify`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                      credential: credentialPayload,
+                    }),
+                  },
+                );
+
+                if (!verifyResponse.ok) {
+                  throw new Error("Login verification failed.");
+                }
+
+                setLoginStatus("success");
+                setIsLoggedIn(true);
               } catch (error) {
                 console.error(error);
                 setLoginStatus("error");
                 setLoginError("Login could not be completed.");
               }
             }}
-
           >
             <div style={{ width: "280px" }}>
               <label
