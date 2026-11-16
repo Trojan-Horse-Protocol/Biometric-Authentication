@@ -1,5 +1,4 @@
 import json
-import re
 import secrets
 from datetime import timedelta
 
@@ -25,11 +24,14 @@ from webauthn.helpers.structs import (
 
 from ..config import settings
 from ..database import get_db
+from ..identifiers import (
+    IDENTIFIER_FORMAT_MESSAGE,
+    is_valid_identifier,
+    normalize_identifier,
+)
 from ..model import AuditEvent, Credential, User, utcnow
 
 router = APIRouter(prefix="/authentication", tags=["auth"])
-
-USERNAME_RE = re.compile(r"^[A-Za-z0-9_-]{3,50}$")
 
 class UsernameInfo(BaseModel):
     username: str
@@ -79,18 +81,19 @@ def start_session(request: Request, user: User) -> None:
 
 @router.post("/register/begin")
 def register_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_db)):
-    if not USERNAME_RE.match(body.username):
-        raise HTTPException(422, "Username: letters, numbers, _ -")
-    if db.query(User).filter_by(username=body.username).first():
+    username = normalize_identifier(body.username)
+    if not is_valid_identifier(username):
+        raise HTTPException(422, IDENTIFIER_FORMAT_MESSAGE)
+    if db.query(User).filter_by(username=username).first():
         raise HTTPException(409, "Username taken")
 
     handle = secrets.token_bytes(32)
     opts = generate_registration_options(
         rp_id=settings.rp_id, rp_name=settings.rp_name,
-        user_id=handle, user_name=body.username,
+        user_id=handle, user_name=username,
         authenticator_selection=AuthenticatorSelectionCriteria(resident_key=ResidentKeyRequirement.PREFERRED,
                                                                user_verification=UserVerificationRequirement.REQUIRED))
-    stash_challenge(request, opts.challenge, purpose="register", username=body.username, handle=handle.hex())
+    stash_challenge(request, opts.challenge, purpose="register", username=username, handle=handle.hex())
     return json.loads(options_to_json(opts))
 
 @router.post("/register/verify")
@@ -122,8 +125,11 @@ def register_verify(body: CredentialInfo, request: Request, db: Session = Depend
 
 @router.post("/login/begin")
 def login_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_db)):
-    check_limit(db, request, body.username)
-    user = db.query(User).filter_by(username=body.username).first()
+    username = normalize_identifier(body.username)
+    if not is_valid_identifier(username):
+        raise HTTPException(422, IDENTIFIER_FORMAT_MESSAGE)
+    check_limit(db, request, username)
+    user = db.query(User).filter_by(username=username).first()
     allow = [PublicKeyCredentialDescriptor(id=c.credential_id) for c in user.credentials] if user else []
     opts = generate_authentication_options(rp_id=settings.rp_id, allow_credentials=allow,
                                            user_verification=UserVerificationRequirement.REQUIRED)

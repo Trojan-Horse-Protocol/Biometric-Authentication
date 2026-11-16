@@ -19,7 +19,7 @@ class User(Base):
     __tablename__ = 'users'
 
     id: Mapped[int]= mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(254), unique=True, index=True)
 
     role: Mapped[str] = mapped_column(default="member")
     handle: Mapped[bytes] = mapped_column(LargeBinary(32), unique=True)
