@@ -130,10 +130,23 @@ def login_begin(body: UsernameInfo, request: Request, db: Session = Depends(get_
         raise HTTPException(422, IDENTIFIER_FORMAT_MESSAGE)
     check_limit(db, request, username)
     user = db.query(User).filter_by(username=username).first()
-    allow = [PublicKeyCredentialDescriptor(id=c.credential_id) for c in user.credentials] if user else []
+    allow = (
+        [PublicKeyCredentialDescriptor(id=c.credential_id) for c in user.credentials]
+        if user
+        else []
+    )
+    if not allow:
+        allow = [PublicKeyCredentialDescriptor(id=secrets.token_bytes(32))]
+
     opts = generate_authentication_options(rp_id=settings.rp_id, allow_credentials=allow,
                                            user_verification=UserVerificationRequirement.REQUIRED)
-    stash_challenge(request, opts.challenge, purpose="login")
+    stash_challenge(
+        request,
+        opts.challenge,
+        purpose="login",
+        uid=user.id if user else None,
+        username=username,
+    )
     return json.loads(options_to_json(opts))
 
 
@@ -145,13 +158,21 @@ def login_verify(body: CredentialInfo, request: Request, db: Session = Depends(g
     except Exception:
         raise HTTPException(400, "bad credential")
 
-    cred = db.query(Credential).filter_by(credential_id=raw_id).first()
-    user = db.get(User, cred.user_id) if cred else None
-    check_limit(db, request, user.username if user else None)
-
-    if not cred or not user:
-        audit(db, "login_fail", False, request=request, detail="unknown credential")
+    user_id = ch.get("uid")
+    user = db.get(User, user_id) if user_id is not None else None
+    check_limit(db, request, user.username if user else ch.get("username"))
+    if not user:
+        audit(db, "login_fail", False, request=request, detail="unknown username")
         raise HTTPException(401, "Authentication failed")
+
+    cred = db.query(Credential).filter_by(
+        credential_id=raw_id,
+        user_id=user.id,
+    ).first()
+    if not cred:
+        audit(db, "login_fail", False, user, request, "credential not registered to user")
+        raise HTTPException(401, "Authentication failed")
+
     try:
         v = verify_authentication_response( credential=body.credential, expected_challenge=ch["c"],
                                             expected_rp_id=settings.rp_id, expected_origin=settings.origin,
