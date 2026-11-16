@@ -6,8 +6,6 @@ backend/   FastAPI application
 frontend/  React + TypeScript + Vite application
 ```
 
-The current starter only includes a health check and a basic frontend page. WebAuthn registration, authentication, database persistence, and security controls will be added in later tasks.
-
 ## Prerequisites
 
 - Python 3.10 or newer
