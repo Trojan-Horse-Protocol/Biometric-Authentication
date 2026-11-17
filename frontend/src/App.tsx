@@ -1,4 +1,8 @@
 import { useEffect, useState } from "react";
+import logo from "./assets/SLP_logo.png";
+import registrationTape from "./assets/registration-tape.png";
+import star1 from "./assets/star1.png";
+import star2 from "./assets/star2.png";
 
 // Backend API configuration
 const apiBaseUrl =
@@ -348,19 +352,21 @@ function App() {
         fontFamily: "system-ui",
         maxWidth: 720,
         margin: "4rem auto",
-        padding: "0 1rem"
+        padding: "0 1rem",
+        minHeight: "100vh",
       }}
     >
       {/* Main application layout */}
-      <h1>WebAuthn Project</h1>
-      <p>Placeholder description.</p>
+      {/*
+        <h1>WebAuthn Project</h1>
+        <p>Placeholder description.</p>
 
-      {/* Development backend health check */}
-      <button type="button" onClick={checkBackend}>
-        Check backend health
-      </button>
+        <button type="button" onClick={checkBackend}>
+          Check backend health
+        </button>
 
-      <p aria-live="polite">Backend status: {backendStatus}</p>
+        <p aria-live="polite">Backend status: {backendStatus}</p>
+      */}
       {authStatus === "checking" && (
         <p aria-live="polite">Checking your sign-in session...</p>
       )}
@@ -492,17 +498,121 @@ function App() {
         <section
           aria-labelledby="registration-heading"
           style={{
-            border: "2px solid #222",
+            backgroundColor: "#FFF8E7",
+            border: "none",
             borderRadius: "12px",
-            padding: "3rem",
-            maxWidth: "420px",
-            margin: "2rem auto",
+            boxShadow: "0 8px 20px rgba(60, 45, 20, 0.18)",
+            padding: "1rem",
+            maxWidth: "560px",
+            width: "100%",
+            boxSizing: "border-box",
+            margin: "8rem auto 2rem",
             textAlign: "center",
+            position: "relative",
           }}
         >
-          <h2 id="registration-heading">Create Your Account</h2>
+          <img
+            src={registrationTape}
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: "-48px",
+              left: "-45px",
+              width: "220px",
+              height: "auto",
+              transform: "rotate(0deg)",
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+          />
 
-          <p>Register a passkey to securely sign in.</p>
+          <img
+            src={logo}
+            alt="Trojan Horse Protocol logo"
+            style={{
+              position: "absolute",
+              top: "-90px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "180px",
+              height: "180px",
+              objectFit: "contain",
+            }}
+          />
+
+          <img
+            src={star1}
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              right: "-28px",
+              bottom: "-46px",
+              width: "100px",
+              height: "auto",
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+          />
+
+          <img
+            src={star2}
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              right: "16px",
+              bottom: "-86px",
+              width: "60px",
+              height: "auto",
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+          />
+
+          <div
+            style={{
+              border: "1px solid #4A1938",
+              borderRadius: "12px",
+              padding: "6rem 3rem 3rem",
+              boxSizing: "border-box",
+            }}
+          >
+          <h2
+            id="registration-heading"
+            style={{
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontSize: "2.5rem",
+              fontWeight: 600,
+              color: "#4A1938",
+              margin: "0 0 0.75rem",
+            }}
+          >
+            Create Your Account
+          </h2>
+
+          <div
+            aria-hidden="true"
+            style={{
+              width: "70%",
+              maxWidth: "620px",
+              height: "1px",
+              backgroundColor: "#4A1938",
+              margin: "0 auto 0.75rem",
+            }}
+          />
+
+          <p
+            style={{
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontSize: "1.1rem",
+              color: "#4A1938",
+              margin: "0 0 2rem",
+            }}
+          >
+            Register a passkey to securely sign in.
+          </p>
 
           <form
             style={{
@@ -608,13 +718,17 @@ function App() {
               }
             }}
           >
-            <div style={{ width: "280px" }}>
+            <div style={{ width: "100%", maxWidth: "560px" }}>
               <label
                 htmlFor="username"
                 style={{
                   display: "block",
                   textAlign: "left",
                   marginBottom: "0.4rem",
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "#4A1938",
                 }}
               >
                 Email or Username:
@@ -627,7 +741,15 @@ function App() {
                 required
                 style={{
                   width: "100%",
+                  height: "42px",
                   boxSizing: "border-box",
+                  border: "1px solid #4A1938",
+                  borderRadius: "14px",
+                  padding: "0 1rem",
+                  backgroundColor: "#FFFFFF",
+                  color: "#4A1938",
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  fontSize: "1.1rem",
                 }}
               />
             </div>
@@ -635,6 +757,19 @@ function App() {
             <button
               type="submit"
               disabled={registrationStatus === "loading"}
+              style={{
+                height: "42px",
+                padding: "0 2rem",
+                border: "1px solid #4A1938",
+                borderRadius: "21px",
+                backgroundColor:
+                  registrationStatus === "loading" ? "#F7B8C8" : "#EE61AA",
+                color: "#FFFFFF",
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                cursor: registrationStatus === "loading" ? "not-allowed" : "pointer",
+              }}
             >
               {registrationStatus === "loading"
                 ? "Registering..."
@@ -648,18 +783,63 @@ function App() {
               "Registration complete."}
           </p>
 
-          <p aria-live="assertive">
+          <p
+            aria-live="assertive"
+            style={{
+              color: "#D00000",
+              fontWeight: 700,
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontSize: "1rem",
+              margin: "0.75rem 0 0",
+            }}
+          >
             {registrationStatus === "error" && registrationError}
           </p>
 
-          <button
-            type="button"
-            onClick={() => setView("login")}
-            style={{ marginTop: "1rem" }}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+              marginTop: "1rem",
+            }}
           >
-            Already have an account? Sign in
-          </button>
+            <span
+              aria-hidden="true"
+              style={{
+                flex: 1,
+                height: "1px",
+                backgroundColor: "#4A1938",
+              }}
+            />
 
+            <button
+              type="button"
+              onClick={() => setView("login")}
+              style={{
+                padding: 0,
+                border: "none",
+                backgroundColor: "transparent",
+                color: "#4A1938",
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontSize: "1rem",
+                cursor: "pointer",
+              }}
+            >
+              Already have an account?{" "}
+              <span style={{ textDecoration: "underline" }}>Sign in</span>
+            </button>
+
+            <span
+              aria-hidden="true"
+              style={{
+                flex: 1,
+                height: "1px",
+                backgroundColor: "#4A1938",
+              }}
+            />
+          </div>
+          </div>
         </section>
       )}
 
@@ -668,17 +848,120 @@ function App() {
         <section
           aria-labelledby="login-heading"
           style={{
-            border: "2px solid #222",
+            backgroundColor: "#FFF8E7",
+            border: "none",
             borderRadius: "12px",
-            padding: "3rem",
-            maxWidth: "420px",
-            margin: "2rem auto",
+            boxShadow: "0 8px 20px rgba(60, 45, 20, 0.18)",
+            padding: "1rem",
+            maxWidth: "560px",
+            width: "100%",
+            boxSizing: "border-box",
+            margin: "8rem auto 2rem",
             textAlign: "center",
+            position: "relative",
           }}
         >
-          <h2 id="login-heading">Welcome Back</h2>
+          <img
+            src={registrationTape}
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: "-48px",
+              left: "-45px",
+              width: "220px",
+              height: "auto",
+              transform: "rotate(0deg)",
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+          />
 
-          <p>Sign in securely with your passkey.</p>
+          <img
+            src={logo}
+            alt="Trojan Horse Protocol logo"
+            style={{
+              position: "absolute",
+              top: "-90px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              width: "180px",
+              height: "180px",
+              objectFit: "contain",
+            }}
+          />
+
+          <img
+            src={star1}
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              right: "-28px",
+              bottom: "-46px",
+              width: "100px",
+              height: "auto",
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+          />
+
+          <img
+            src={star2}
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              right: "16px",
+              bottom: "-86px",
+              width: "60px",
+              height: "auto",
+              zIndex: 2,
+              pointerEvents: "none",
+            }}
+          />
+
+          <div
+            style={{
+              border: "1px solid #4A1938",
+              borderRadius: "12px",
+              padding: "6rem 3rem 3rem",
+              boxSizing: "border-box",
+            }}
+          >
+          <h2
+            id="login-heading"
+            style={{
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontSize: "2.5rem",
+              fontWeight: 600,
+              color: "#4A1938",
+              margin: "0 0 0.75rem",
+            }}
+          >
+            Welcome Back
+          </h2>
+
+          <div
+            aria-hidden="true"
+            style={{
+              width: "70%",
+              height: "1px",
+              backgroundColor: "#4A1938",
+              margin: "0 auto 0.75rem",
+            }}
+          />
+
+          <p
+            style={{
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontSize: "1.1rem",
+              color: "#4A1938",
+              margin: "0 0 2rem",
+            }}
+          >
+            Sign in securely with your passkey.
+          </p>
 
           <form
             style={{
@@ -786,13 +1069,17 @@ function App() {
               }
             }}
           >
-            <div style={{ width: "280px" }}>
+            <div style={{ width: "100%", maxWidth: "560px" }}>
               <label
                 htmlFor="login-username"
                 style={{
                   display: "block",
                   textAlign: "left",
                   marginBottom: "0.4rem",
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "#4A1938",
                 }}
               >
                 Email or Username:
@@ -805,7 +1092,15 @@ function App() {
                 required
                 style={{
                   width: "100%",
+                  height: "42px",
                   boxSizing: "border-box",
+                  border: "1px solid #4A1938",
+                  borderRadius: "14px",
+                  padding: "0 1rem",
+                  backgroundColor: "#FFFFFF",
+                  color: "#4A1938",
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  fontSize: "1.1rem",
                 }}
               />
             </div>
@@ -813,6 +1108,19 @@ function App() {
             <button
               type="submit"
               disabled={loginStatus === "loading"}
+              style={{
+                height: "42px",
+                padding: "0 2rem",
+                border: "1px solid #4A1938",
+                borderRadius: "21px",
+                backgroundColor:
+                  loginStatus === "loading" ? "#F7B8C8" : "#EE61AA",
+                color: "#FFFFFF",
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontSize: "1.1rem",
+                fontWeight: 600,
+                cursor: loginStatus === "loading" ? "not-allowed" : "pointer",
+              }}
             >
               {loginStatus === "loading"
                 ? "Signing in..."
@@ -826,17 +1134,63 @@ function App() {
               "Login complete."}
           </p>
 
-          <p aria-live="assertive">
+          <p
+            aria-live="assertive"
+            style={{
+              color: "#D00000",
+              fontWeight: 700,
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontSize: "1rem",
+              margin: "0.75rem 0 0",
+            }}
+          >
             {loginStatus === "error" && loginError}
           </p>
 
-          <button
-            type="button"
-            onClick={() => setView("register")}
-            style={{ marginTop: "1rem" }}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+              marginTop: "1rem",
+            }}
           >
-            Need an account? Create one
-          </button>
+            <span
+              aria-hidden="true"
+              style={{
+                flex: 1,
+                height: "1px",
+                backgroundColor: "#4A1938",
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => setView("register")}
+              style={{
+                padding: 0,
+                border: "none",
+                backgroundColor: "transparent",
+                color: "#4A1938",
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontSize: "1rem",
+                cursor: "pointer",
+              }}
+            >
+              Need an account?{" "}
+              <span style={{ textDecoration: "underline" }}>Create one</span>
+            </button>
+
+            <span
+              aria-hidden="true"
+              style={{
+                flex: 1,
+                height: "1px",
+                backgroundColor: "#4A1938",
+              }}
+            />
+          </div>
+          </div>
         </section>
       )}
 
