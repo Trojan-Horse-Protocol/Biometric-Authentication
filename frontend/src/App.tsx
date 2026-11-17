@@ -21,33 +21,41 @@ function isValidIdentifier(identifier: string): boolean {
   return USERNAME_PATTERN.test(identifier) || EMAIL_PATTERN.test(identifier);
 }
 
-  // Converts WebAuthn credential data for the backend.
-  function base64UrlToUint8Array(value: string): Uint8Array {
-    const padding = "=".repeat((4 - (value.length % 4)) % 4);
-    const base64 = (value + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-    const binary = window.atob(base64);
-  
-    return Uint8Array.from(binary, (character) =>
-      character.charCodeAt(0),
-    );
-  }
-  
-  function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-  
-    bytes.forEach((byte) => {
-      binary += String.fromCharCode(byte);
-    });
-  
-    return window
-      .btoa(binary)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-  }
+// Converts WebAuthn credential data for the backend.
+function base64UrlToUint8Array(value: string): Uint8Array {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const binary = window.atob(base64);
+
+  return Uint8Array.from(binary, (character) =>
+    character.charCodeAt(0),
+  );
+}
+
+function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return window
+    .btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+type Passkey = {
+  id: number;
+  label: string;
+};
+
+type AccountStatus = "idle" | "loading" | "ready" | "error";
+type PasskeyActionStatus = "idle" | "loading" | "success" | "error";
 
 function App() {
   // Component state
@@ -65,6 +73,17 @@ function App() {
     "checking" | "authenticated" | "unauthenticated" | "error"
   >("checking");
   const [authError, setAuthError] = useState("");
+
+  // Account information state
+  const [accountUsername, setAccountUsername] = useState("");
+  const [accountRole, setAccountRole] = useState("");
+  const [passkeys, setPasskeys] = useState<Passkey[]>([]);
+  const [accountStatus, setAccountStatus] = useState<AccountStatus>("idle");
+  const [accountError, setAccountError] = useState("");
+
+  // Passkey action state
+  const [passkeyActionStatus, setPasskeyActionStatus] = useState<PasskeyActionStatus>("idle");
+  const [passkeyActionError, setPasskeyActionError] = useState("");
 
   // Registration status state
   const [registrationStatus, setRegistrationStatus] = useState<
@@ -115,6 +134,57 @@ function App() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (authStatus !== "authenticated") {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadAccount() {
+      setAccountStatus("loading");
+      setAccountError("");
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/account`, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Account request failed: HTTP ${response.status}`);
+        }
+
+        const data: {
+          username: string;
+          role: string;
+          passkeys: Passkey[];
+        } = await response.json();
+
+        setAccountUsername(data.username);
+        setAccountRole(data.role);
+        setPasskeys(data.passkeys);
+        setAccountStatus("ready");
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        console.error(error);
+        setAccountError(
+          error instanceof Error
+            ? error.message
+            : "Could not load account information.",
+        );
+        setAccountStatus("error");
+      }
+    }
+
+    void loadAccount();
+
+    return () => controller.abort();
+  }, [authStatus]);
+
   // Check whether the backend is available
   async function checkBackend() {
     setBackendStatus("Checking...");
@@ -131,6 +201,144 @@ function App() {
     } catch (error) {
       console.error(error);
       setBackendStatus("Backend unavailable");
+    }
+  }
+
+  async function registerAdditionalPasskey() {
+    setPasskeyActionStatus("loading");
+    setPasskeyActionError("");
+
+    try {
+      const beginResponse = await fetch(
+        `${apiBaseUrl}/account/passkeys/begin`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      if (!beginResponse.ok) {
+        throw new Error("Could not begin passkey registration.");
+      }
+
+      const registrationOptions = await beginResponse.json();
+
+      const publicKeyOptions = {
+        ...registrationOptions,
+        challenge: base64UrlToUint8Array(registrationOptions.challenge),
+        user: {
+          ...registrationOptions.user,
+          id: base64UrlToUint8Array(registrationOptions.user.id),
+        },
+        excludeCredentials:
+          registrationOptions.excludeCredentials?.map(
+            (credential: { id: string; type: string }) => ({
+              ...credential,
+              id: base64UrlToUint8Array(credential.id),
+            }),
+          ),
+      } as PublicKeyCredentialCreationOptions;
+
+      const credential = await navigator.credentials.create({
+        publicKey: publicKeyOptions,
+      });
+
+      if (!(credential instanceof PublicKeyCredential)) {
+        throw new Error("No passkey credential was created.");
+      }
+
+      const attestation =
+        credential.response as AuthenticatorAttestationResponse;
+
+      const credentialPayload = {
+        id: credential.id,
+        rawId: arrayBufferToBase64Url(credential.rawId),
+        type: credential.type,
+        response: {
+          clientDataJSON: arrayBufferToBase64Url(
+            attestation.clientDataJSON,
+          ),
+          attestationObject: arrayBufferToBase64Url(
+            attestation.attestationObject,
+          ),
+        },
+      };
+
+      const finishResponse = await fetch(
+        `${apiBaseUrl}/account/passkeys/finish`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            credential: credentialPayload,
+          }),
+        },
+      );
+
+      if (!finishResponse.ok) {
+        throw new Error("Could not finish passkey registration.");
+      }
+
+      const accountResponse = await fetch(`${apiBaseUrl}/account`, {
+        credentials: "include",
+      });
+
+      if (!accountResponse.ok) {
+        throw new Error("Passkey was added, but account data could not refresh.");
+      }
+
+      const accountData: {
+        username: string;
+        role: string;
+        passkeys: Passkey[];
+      } = await accountResponse.json();
+
+      setPasskeys(accountData.passkeys);
+      setPasskeyActionStatus("success");
+    } catch (error) {
+      console.error(error);
+      setPasskeyActionStatus("error");
+      setPasskeyActionError(
+        error instanceof Error
+          ? error.message
+          : "Passkey registration could not be completed.",
+      );
+    }
+  }
+
+  async function removePasskey(passkeyId: number) {
+    setPasskeyActionStatus("loading");
+    setPasskeyActionError("");
+
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/account/passkeys/${passkeyId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Could not remove this passkey.");
+      }
+
+      setPasskeys((currentPasskeys) =>
+        currentPasskeys.filter((passkey) => passkey.id !== passkeyId),
+      );
+
+      setPasskeyActionStatus("success");
+    } catch (error) {
+      console.error(error);
+      setPasskeyActionStatus("error");
+      setPasskeyActionError(
+        error instanceof Error
+          ? error.message
+          : "Passkey could not be removed.",
+      );
     }
   }
 
@@ -178,6 +386,86 @@ function App() {
           <p>You are signed in with your passkey.</p>
 
           <p>This is a placeholder.</p>
+
+          <section
+            aria-labelledby="account-heading"
+            style={{
+              marginTop: "2rem",
+            }}
+          >
+            <h3 id="account-heading">Account information</h3>
+
+            {accountStatus === "loading" && (
+              <p aria-live="polite">Loading account information...</p>
+            )}
+
+            {accountStatus === "error" && (
+              <p role="alert">{accountError}</p>
+            )}
+
+            {accountStatus === "ready" && (
+              <>
+                <p>Username: {accountUsername}</p>
+                <p>
+                  Role: {accountRole.charAt(0).toUpperCase() + accountRole.slice(1)}
+                </p>
+
+                <h4>Passkeys</h4>
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: "1rem 0",
+                  }}
+                >
+                  {passkeys.map((passkey) => (
+                    <li
+                      key={passkey.id}
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        marginBottom: "0.75rem",
+                      }}
+                    >
+                      <span>{passkey.label}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => removePasskey(passkey.id)}
+                        disabled={passkeyActionStatus === "loading"}
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  onClick={registerAdditionalPasskey}
+                  disabled={passkeyActionStatus === "loading"}
+                  style={{
+                    marginTop: "1rem",
+                  }}
+                >
+                  {passkeyActionStatus === "loading"
+                    ? "Working..."
+                    : "Register another passkey"}
+                </button>
+
+                {passkeyActionStatus === "success" && (
+                  <p aria-live="polite">Passkey update completed.</p>
+                )}
+
+                {passkeyActionStatus === "error" && (
+                  <p role="alert">{passkeyActionError}</p>
+                )}
+              </>
+            )}
+          </section>
 
           <button
             type="button"
@@ -250,13 +538,13 @@ function App() {
                     body: JSON.stringify({ username }),
                   },
                 );
-              
+
                 if (!beginResponse.ok) {
                   throw new Error("Could not begin registration.");
                 }
-              
+
                 const registrationOptions = await beginResponse.json();
-              
+
                 const publicKeyOptions = {
                   ...registrationOptions,
                   challenge: base64UrlToUint8Array(registrationOptions.challenge),
@@ -271,17 +559,17 @@ function App() {
                     }),
                   ),
                 } as PublicKeyCredentialCreationOptions;
-              
+
                 const credential = await navigator.credentials.create({
                   publicKey: publicKeyOptions,
                 });
-              
+
                 if (!(credential instanceof PublicKeyCredential)) {
                   throw new Error("No passkey credential was created.");
                 }
-              
+
                 const attestation = credential.response as AuthenticatorAttestationResponse;
-              
+
                 const credentialPayload = {
                   id: credential.id,
                   rawId: arrayBufferToBase64Url(credential.rawId),
@@ -293,7 +581,7 @@ function App() {
                     ),
                   },
                 };
-              
+
                 const verifyResponse = await fetch(
                   `${apiBaseUrl}/authentication/register/verify`,
                   {
@@ -307,11 +595,11 @@ function App() {
                     }),
                   },
                 );
-              
+
                 if (!verifyResponse.ok) {
                   throw new Error("Registration verification failed.");
                 }
-                
+
                 setRegistrationStatus("success");
               } catch (error) {
                 console.error(error);
@@ -522,7 +810,7 @@ function App() {
               />
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={loginStatus === "loading"}
             >
