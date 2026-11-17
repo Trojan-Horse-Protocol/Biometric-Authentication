@@ -485,8 +485,8 @@ function App() {
               alt=""
               style={{
                 position: "absolute",
-                left: "28%",
-                top: "10rem",
+                left: "calc(50% - 205px)",
+                top: "7.05rem",
                 width: "34px",
                 height: "34px",
               }}
@@ -497,8 +497,8 @@ function App() {
               alt=""
               style={{
                 position: "absolute",
-                left: "34%",
-                top: "11rem",
+                left: "calc(50% - 150px)",
+                top: "8.65rem",
                 width: "18px",
                 height: "18px",
               }}
@@ -509,8 +509,8 @@ function App() {
               alt=""
               style={{
                 position: "absolute",
-                right: "28%",
-                top: "10.5rem",
+                right: "calc(50% - 150px)",
+                top: "8.25rem",
                 width: "18px",
                 height: "18px",
               }}
@@ -521,8 +521,8 @@ function App() {
               alt=""
               style={{
                 position: "absolute",
-                right: "24%",
-                top: "11.25rem",
+                right: "calc(50% - 205px)",
+                top: "7.1rem",
                 width: "38px",
                 height: "38px",
               }}
