@@ -3,6 +3,13 @@ import logo from "./assets/SLP_logo.png";
 import registrationTape from "./assets/registration-tape.png";
 import star1 from "./assets/star1.png";
 import star2 from "./assets/star2.png";
+import homeBanner from "./assets/home-banner.png";
+import homePlaque from "./assets/home-plaque.png";
+import accountPlaque from "./assets/account-plaque.png";
+import homeStarOutlinePlum from "./assets/home-star-outline-plum.png";
+import homeStarOutlinePink from "./assets/home-star-outline-pink.png";
+import homeStarPink from "./assets/home-star-pink.png";
+import homeStarPlum from "./assets/home-star-plum.png";
 
 // Backend API configuration
 const apiBaseUrl =
@@ -350,10 +357,11 @@ function App() {
     <main
       style={{
         fontFamily: "system-ui",
-        maxWidth: 720,
-        margin: "4rem auto",
-        padding: "0 1rem",
+        maxWidth: 1440,
+        margin: "0 auto",
+        padding: "2rem 1rem",
         minHeight: "100vh",
+        boxSizing: "border-box",
       }}
     >
       {/* Main application layout */}
@@ -379,96 +387,454 @@ function App() {
         <section
           aria-labelledby="home-heading"
           style={{
-            border: "2px solid #222",
+            backgroundColor: "#FFF8E7",
+            border: "6px solid #AAB86F",
             borderRadius: "12px",
-            padding: "3rem",
-            maxWidth: "420px",
+            boxShadow: "0 8px 20px rgba(60, 45, 20, 0.18)",
+            padding: "8rem 3rem 3rem",
+            width: "100%",
+            maxWidth: "1100px",
+            minHeight: "680px",
+            boxSizing: "border-box",
             margin: "2rem auto",
             textAlign: "center",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          <h2 id="home-heading">Welcome</h2>
-
-          <p>You are signed in with your passkey.</p>
-
-          <p>This is a placeholder.</p>
-
-          <section
-            aria-labelledby="account-heading"
+          <img
+            src={homeBanner}
+            alt=""
+            aria-hidden="true"
             style={{
-              marginTop: "2rem",
+              position: "absolute",
+              top: "-6px",
+              left: "-6px",
+              width: "calc(100% + 12px)",
+              height: "102px",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "240px",
+              zIndex: 1,
+              pointerEvents: "none",
             }}
           >
-            <h3 id="account-heading">Account information</h3>
+            <img
+              src={logo}
+              alt=""
+              style={{
+                position: "absolute",
+                left: "1rem",
+                top: "0.25rem",
+                width: "140px",
+                height: "140px",
+                objectFit: "contain",
+              }}
+            />
 
+            <img
+              src={homePlaque}
+              alt=""
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "0.75rem",
+                width: "360px",
+                height: "118px",
+                objectFit: "fill",
+                transform: "translateX(-50%)",
+              }}
+            />
+
+            <span
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "0.75rem",
+                height: "118px",
+                width: "260px",
+                transform: "translateX(-50%)",
+                color: "#FFFFFF",
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontSize: "1.5rem",
+                fontWeight: 600,
+                lineHeight: 1.1,
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              Trojan Horse
+              <br />
+              Protocol
+            </span>
+
+            <img
+              src={homeStarOutlinePlum}
+              alt=""
+              style={{
+                position: "absolute",
+                left: "28%",
+                top: "10rem",
+                width: "34px",
+                height: "34px",
+              }}
+            />
+
+            <img
+              src={homeStarPink}
+              alt=""
+              style={{
+                position: "absolute",
+                left: "34%",
+                top: "11rem",
+                width: "18px",
+                height: "18px",
+              }}
+            />
+
+            <img
+              src={homeStarPlum}
+              alt=""
+              style={{
+                position: "absolute",
+                right: "28%",
+                top: "10.5rem",
+                width: "18px",
+                height: "18px",
+              }}
+            />
+
+            <img
+              src={homeStarOutlinePink}
+              alt=""
+              style={{
+                position: "absolute",
+                right: "24%",
+                top: "11.25rem",
+                width: "38px",
+                height: "38px",
+              }}
+            />
+          </div>
+
+          <h2
+            id="home-heading"
+            style={{
+              color: "#4A1938",
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontWeight: 600,
+              fontSize: "2.5rem",
+              margin: "1rem 0 0.75rem",
+            }}
+          >
+            Welcome!
+          </h2>
+
+          <p
+            style={{
+              margin: "0 0 2rem",
+              color: "#4A1938",
+              fontFamily: "Fraunces, Georgia, serif",
+              fontSize: "1.4rem",
+              fontWeight: 700,
+            }}
+          >
+            You are signed in with your passkey.
+          </p>
+
+          <section
+            aria-label="Account and passkey controls"
+            style={{
+              position: "relative",
+              border: "2px solid #AAB86F",
+              borderRadius: "22px",
+              padding: "3rem 1rem 1rem",
+              margin: "2rem auto 0",
+              maxWidth: "720px",
+              textAlign: "left",
+              backgroundColor: "#FFF8E7",
+              boxSizing: "border-box",
+            }}
+          >
             {accountStatus === "loading" && (
-              <p aria-live="polite">Loading account information...</p>
+              <p
+                aria-live="polite"
+                style={{
+                  color: "#4A1938",
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  textAlign: "center",
+                }}
+              >
+                Loading account information...
+              </p>
             )}
 
             {accountStatus === "error" && (
-              <p role="alert">{accountError}</p>
+              <p
+                role="alert"
+                style={{
+                  color: "#C00000",
+                  fontFamily: '"Fraunces", Georgia, serif',
+                  fontWeight: 700,
+                  textAlign: "center",
+                }}
+              >
+                {accountError}
+              </p>
             )}
 
             {accountStatus === "ready" && (
               <>
-                <p>Username: {accountUsername}</p>
-                <p>
-                  Role: {accountRole.charAt(0).toUpperCase() + accountRole.slice(1)}
-                </p>
-
-                <h4>Passkeys</h4>
-
-                <ul
+                <section
+                  aria-labelledby="account-heading"
                   style={{
-                    listStyle: "none",
-                    padding: 0,
-                    margin: "1rem 0",
+                    position: "relative",
+                    border: "1px solid #AAB86F",
+                    borderRadius: "18px",
+                    padding: "2.75rem 1.25rem 1rem",
+                    marginBottom: "2.25rem",
+                    backgroundColor: "#FFF8E7",
                   }}
                 >
-                  {passkeys.map((passkey) => (
-                    <li
-                      key={passkey.id}
+                  <img
+                    src={accountPlaque}
+                    alt=""
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      top: "-1.65rem",
+                      left: "1rem",
+                      width: "230px",
+                      height: "60px",
+                      objectFit: "fill",
+                    }}
+                  />
+                  <h3
+                    id="account-heading"
+                    style={{
+                      position: "absolute",
+                      top: "-1.65rem",
+                      left: "1rem",
+                      width: "230px",
+                      height: "60px",
+                      boxSizing: "border-box",
+                      margin: 0,
+                      color: "#4A1938",
+                      fontFamily: '"Fraunces", Georgia, serif',
+                      fontSize: "1.15rem",
+                      fontWeight: 700,
+                      lineHeight: 1.05,
+                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 1,
+                    }}
+                  >
+                    Account
+                    <br />
+                    Information
+                  </h3>
+                  <p
+                    style={{
+                      color: "#4A1938",
+                      fontFamily: '"Fraunces", Georgia, serif',
+                      margin: "0.25rem 0",
+                    }}
+                  >
+                    Username: {accountUsername}
+                  </p>
+                  <p
+                    style={{
+                      color: "#4A1938",
+                      fontFamily: '"Fraunces", Georgia, serif',
+                      margin: "0.25rem 0",
+                    }}
+                  >
+                    Role: {accountRole.charAt(0).toUpperCase() + accountRole.slice(1)}
+                  </p>
+                </section>
+
+                <section
+                  aria-labelledby="passkeys-heading"
+                  style={{
+                    position: "relative",
+                    border: "1px solid #AAB86F",
+                    borderRadius: "18px",
+                    padding: "2.75rem 1.25rem 1rem",
+                    backgroundColor: "#FFF8E7",
+                  }}
+                >
+                  <img
+                    src={accountPlaque}
+                    alt=""
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      top: "-1.65rem",
+                    left: "1rem",
+                      width: "210px",
+                      height: "58px",
+                      objectFit: "fill",
+                    }}
+                  />
+                  <h4
+                    id="passkeys-heading"
+                    style={{
+                      position: "absolute",
+                      top: "-1.65rem",
+                      left: "1rem",
+                      width: "210px",
+                      height: "58px",
+                      boxSizing: "border-box",
+                      margin: 0,
+                      color: "#4A1938",
+                      fontFamily: '"Fraunces", Georgia, serif',
+                      fontSize: "1.15rem",
+                      fontWeight: 700,
+                      lineHeight: 1.05,
+                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 1,
+                    }}
+                  >
+                    Passkeys
+                  </h4>
+
+                  <ul
+                    style={{
+                      listStyle: "none",
+                      padding: 0,
+                      margin: "0 0 0.75rem",
+                    }}
+                  >
+                    {passkeys.map((passkey) => (
+                      <li
+                        key={passkey.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: "1rem",
+                          padding: "0.35rem 0.75rem",
+                          border: "1px solid #AAB86F",
+                          borderRadius: "999px",
+                          backgroundColor: "#F3EED7",
+                          color: "#4A1938",
+                          fontFamily: '"Fraunces", Georgia, serif',
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        <span>{passkey.label}</span>
+
+                        <button
+                          type="button"
+                          onClick={() => removePasskey(passkey.id)}
+                          disabled={passkeyActionStatus === "loading"}
+                          style={{
+                            backgroundColor: "#EE61AA",
+                            color: "#4A1938",
+                            border: "1px solid #4A1938",
+                            borderRadius: "999px",
+                            padding: "0.25rem 1.25rem",
+                            fontFamily: '"Fraunces", Georgia, serif',
+                            fontWeight: 600,
+                            cursor:
+                              passkeyActionStatus === "loading"
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity: passkeyActionStatus === "loading" ? 0.65 : 1,
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    type="button"
+                    onClick={registerAdditionalPasskey}
+                    disabled={passkeyActionStatus === "loading"}
+                    style={{
+                      backgroundColor: "#EE61AA",
+                      color: "#FFFFFF",
+                      border: "1px solid #4A1938",
+                      borderRadius: "999px",
+                      padding: "0.35rem 0.9rem",
+                      fontFamily: '"Fraunces", Georgia, serif',
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      cursor:
+                        passkeyActionStatus === "loading" ? "not-allowed" : "pointer",
+                      opacity: passkeyActionStatus === "loading" ? 0.65 : 1,
+                    }}
+                  >
+                    {passkeyActionStatus === "loading"
+                      ? "Registering..."
+                      : "Register another passkey"}
+                  </button>
+
+                  {passkeyActionStatus === "loading" && (
+                    <p
+                      aria-live="polite"
                       style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        gap: "0.75rem",
-                        marginBottom: "0.75rem",
+                        color: "#4A1938",
+                        fontFamily: '"Fraunces", Georgia, serif',
+                        fontWeight: 700,
+                        textAlign: "center",
+                        margin: "0.75rem 0 0",
                       }}
                     >
-                      <span>{passkey.label}</span>
+                      Preparing passkey update...
+                    </p>
+                  )}
 
-                      <button
-                        type="button"
-                        onClick={() => removePasskey(passkey.id)}
-                        disabled={passkeyActionStatus === "loading"}
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                  {passkeyActionStatus === "success" && (
+                    <p
+                      aria-live="polite"
+                      style={{
+                        color: "#4A1938",
+                        fontFamily: '"Fraunces", Georgia, serif',
+                        fontWeight: 700,
+                        textAlign: "center",
+                        margin: "0.75rem 0 0",
+                      }}
+                    >
+                      Passkey update completed.
+                    </p>
+                  )}
 
-                <button
-                  type="button"
-                  onClick={registerAdditionalPasskey}
-                  disabled={passkeyActionStatus === "loading"}
-                  style={{
-                    marginTop: "1rem",
-                  }}
-                >
-                  {passkeyActionStatus === "loading"
-                    ? "Working..."
-                    : "Register another passkey"}
-                </button>
-
-                {passkeyActionStatus === "success" && (
-                  <p aria-live="polite">Passkey update completed.</p>
-                )}
-
-                {passkeyActionStatus === "error" && (
-                  <p role="alert">{passkeyActionError}</p>
-                )}
+                  {passkeyActionStatus === "error" && (
+                    <p
+                      role="alert"
+                      aria-live="assertive"
+                      style={{
+                        color: "#D00000",
+                        fontFamily: '"Fraunces", Georgia, serif',
+                        fontWeight: 700,
+                        textAlign: "center",
+                        margin: "0.75rem 0 0",
+                      }}
+                    >
+                      {passkeyActionError}
+                    </p>
+                  )}
+                </section>
               </>
             )}
           </section>
@@ -486,6 +852,18 @@ function App() {
               setLoginStatus("idle");
               setLoginError("");
               setView("login");
+            }}
+            style={{
+              display: "block",
+              margin: "1.5rem 0 0 auto",
+              backgroundColor: "#EE61AA",
+              color: "#FFFFFF",
+              border: "1px solid #4A1938",
+              borderRadius: "999px",
+              padding: "0.55rem 1.5rem",
+              fontFamily: '"Fraunces", Georgia, serif',
+              fontWeight: 600,
+              cursor: "pointer",
             }}
           >
             Log out
