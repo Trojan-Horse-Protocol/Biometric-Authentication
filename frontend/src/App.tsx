@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Backend API configuration
 const apiBaseUrl =
@@ -60,6 +60,12 @@ function App() {
   const [registrationError, setRegistrationError] = useState("");
   const [loginError, setLoginError] = useState("");
 
+  // Authentication status state
+  const [authStatus, setAuthStatus] = useState<
+    "checking" | "authenticated" | "unauthenticated" | "error"
+  >("checking");
+  const [authError, setAuthError] = useState("");
+
   // Registration status state
   const [registrationStatus, setRegistrationStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -69,6 +75,45 @@ function App() {
   const [loginStatus, setLoginStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function restoreSession() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/authentication/user`, {
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        if (response.status === 401) {
+          setIsLoggedIn(false);
+          setAuthStatus("unauthenticated");
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Session check failed: HTTP ${response.status}`);
+        }
+
+        setIsLoggedIn(true);
+        setAuthStatus("authenticated");
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        console.error(error);
+        setAuthError(
+          error instanceof Error ? error.message : "Could not check session.",
+        );
+        setAuthStatus("error");
+      }
+    }
+
+    void restoreSession();
+    return () => controller.abort();
+  }, []);
 
   // Check whether the backend is available
   async function checkBackend() {
@@ -108,7 +153,15 @@ function App() {
       </button>
 
       <p aria-live="polite">Backend status: {backendStatus}</p>
-      {isLoggedIn && (
+      {authStatus === "checking" && (
+        <p aria-live="polite">Checking your sign-in session...</p>
+      )}
+      {authStatus === "error" && (
+        <p role="alert">
+          Unable to check your sign-in session: {authError}
+        </p>
+      )}
+      {authStatus === "authenticated" && isLoggedIn && (
         <section
           aria-labelledby="home-heading"
           style={{
@@ -135,6 +188,7 @@ function App() {
               });
 
               setIsLoggedIn(false);
+              setAuthStatus("unauthenticated");
               setLoginStatus("idle");
               setLoginError("");
               setView("login");
@@ -146,7 +200,7 @@ function App() {
       )}
 
       {/* Registration view */}
-      {!isLoggedIn && view === "register" && (
+      {authStatus === "unauthenticated" && !isLoggedIn && view === "register" && (
         <section
           aria-labelledby="registration-heading"
           style={{
@@ -322,7 +376,7 @@ function App() {
       )}
 
       {/* Login view */}
-      {!isLoggedIn && view === "login" && (
+      {authStatus === "unauthenticated" && !isLoggedIn && view === "login" && (
         <section
           aria-labelledby="login-heading"
           style={{
@@ -436,6 +490,7 @@ function App() {
 
                 setLoginStatus("success");
                 setIsLoggedIn(true);
+                setAuthStatus("authenticated");
               } catch (error) {
                 console.error(error);
                 setLoginStatus("error");
