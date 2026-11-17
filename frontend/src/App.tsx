@@ -4,6 +4,23 @@ import { useState } from "react";
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+const USERNAME_PATTERN = /^[A-Za-z0-9_-]{3,50}$/;
+const EMAIL_PATTERN =
+  /^(?=.{1,254}$)(?=.{1,64}@)[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
+const IDENTIFIER_FORMAT_MESSAGE =
+  "Use a 3-50 character username (letters, numbers, underscores, or hyphens) or a valid email address.";
+
+function normalizeIdentifier(identifier: string): string {
+  const trimmedIdentifier = identifier.trim();
+  return trimmedIdentifier.includes("@")
+    ? trimmedIdentifier.toLowerCase()
+    : trimmedIdentifier;
+}
+
+function isValidIdentifier(identifier: string): boolean {
+  return USERNAME_PATTERN.test(identifier) || EMAIL_PATTERN.test(identifier);
+}
+
   // Converts WebAuthn credential data for the backend.
   function base64UrlToUint8Array(value: string): Uint8Array {
     const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -155,10 +172,17 @@ function App() {
             onSubmit={async (event) => {
               event.preventDefault();
               setRegistrationError("");
-              setRegistrationStatus("loading");
 
               const formData = new FormData(event.currentTarget);
-              const username = String(formData.get("username") ?? "");
+              const username = normalizeIdentifier(
+                String(formData.get("username") ?? ""),
+              );
+              if (!isValidIdentifier(username)) {
+                setRegistrationStatus("error");
+                setRegistrationError(IDENTIFIER_FORMAT_MESSAGE);
+                return;
+              }
+              setRegistrationStatus("loading");
 
               try {
                 const beginResponse = await fetch(
@@ -324,10 +348,17 @@ function App() {
             onSubmit={async (event) => {
               event.preventDefault();
               setLoginError("");
-              setLoginStatus("loading");
 
               const formData = new FormData(event.currentTarget);
-              const username = String(formData.get("login-username") ?? "");
+              const username = normalizeIdentifier(
+                String(formData.get("login-username") ?? ""),
+              );
+              if (!isValidIdentifier(username)) {
+                setLoginStatus("error");
+                setLoginError(IDENTIFIER_FORMAT_MESSAGE);
+                return;
+              }
+              setLoginStatus("loading");
 
               try {
                 const beginResponse = await fetch(
