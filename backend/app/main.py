@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.app.errors import register_error_handlers
+from backend.app.routers.session import router as session_router
+
 load_dotenv()
 
 
@@ -24,9 +27,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+register_error_handlers(app)
+app.include_router(session_router)
 
 
 @app.get("/health", tags=["system"])

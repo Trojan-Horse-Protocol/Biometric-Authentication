@@ -105,6 +105,8 @@ WEBAUTHN-8-fastapi-health-endpoint
 ## Current limitations
 
 - No WebAuthn registration or authentication yet
+- Sessions are created from a username until passkey verification is wired up
+- Sessions are stored in memory and reset when the API process restarts
 - No database yet
 - No user accounts or roles yet
 - No production deployment yet
