@@ -107,7 +107,7 @@ def register_verify(body: CredentialInfo, request: Request, db: Session = Depend
         audit(db, "register_fail", False, request=request, detail=str(e))
         raise HTTPException(400, "registration failed")
 
-    role = "admin" if ch["username"] == settings.admin_username else "member"
+    role = "member"
     user = User(username=ch["username"], handle=bytes.fromhex(ch["handle"]), role=role)
     user.credentials.append(Credential(credential_id=v.credential_id, public_key=v.credential_public_key,
                                        sign_count=v.sign_count))
