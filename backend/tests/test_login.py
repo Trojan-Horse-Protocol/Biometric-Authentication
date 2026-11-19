@@ -38,3 +38,15 @@ def test_reg_success(client, db, monkeypatch):
 def test_reg_failusername(client):
     r = client.post(f"{BASE}/register/begin", json={"username":"a!"})
     assert r.status_code == 400
+
+def test_reg_dup_username(client, db):
+    make_user(db, "taken")
+    r = client.post(f"/{BASE}/register/begin", json={"username":"taken"})
+    assert r.status_code == 400
+
+def test_reg_failed_verif(client, db, monkeypatch):
+    fake_registration(monkeypatch, fail=True)
+    client.post(f"{BASE}/register/begin", json={"username":"newuser"})
+    r = client.post(f"{BASE}/register/verify", json={"credential": {}})
+    assert r.status_code == 400
+    assert db.query(User).filter_by(username="newuser").count() == 0
