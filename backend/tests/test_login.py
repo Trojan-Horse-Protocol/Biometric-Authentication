@@ -24,3 +24,17 @@ def fake_login(monkeypatch, fail=False):
 
 def login_body(cred):
     return {"credential": {"rawId": bytes_to_base64url(cred.credential_id)}}
+
+#TEST for registration
+
+def test_reg_success(client, db, monkeypatch):
+    fake_registration(monkeypatch)
+    client.post(f"{BASE}/register/begin", json={"username":"newuser"})
+    r = client.post(f"{BASE}/register/verify", json={"credential": {}})
+    assert r.status_code == 200
+    assert db.query(User).filter_by(username="newuser").count() == 1
+    assert client.get(f"{BASE}/user").status_code == 200
+
+def test_reg_failusername(client):
+    r = client.post(f"{BASE}/register/begin", json={"username":"a!"})
+    assert r.status_code == 400
