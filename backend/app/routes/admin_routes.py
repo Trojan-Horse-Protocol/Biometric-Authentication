@@ -31,8 +31,12 @@ def set_role(user_id: int, body: RoleInfo, request: Request, admin: User = Depen
 
     if not user:
         raise HTTPException(404, "user not found")
-    if user.id == admin.id and body.role != "admin":
-        raise HTTPException(400, "cannot be demoted")
+
+    if admin.role != "super_admin":
+        raise HTTPException(403, "Super admin only")
+
+    if user.role == "super_admin":
+        raise HTTPException(400, "cannot change super admin")
 
     user.role = body.role
     db.commit()

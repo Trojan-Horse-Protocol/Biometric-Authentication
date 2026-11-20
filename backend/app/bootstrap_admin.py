@@ -17,7 +17,11 @@ def main() -> None:
     db = SessionLocal()
 
     try:
-        existing_admin = db.query(User).filter(User.role == "admin").first()
+        existing_admin = (
+             db.query(User)
+            .filter(User.role.in_(["admin", "super_admin"]))
+            .first()
+        )
 
         if existing_admin:
             print(
@@ -32,10 +36,10 @@ def main() -> None:
             print(f"User not found: {username}")
             raise SystemExit(1)
 
-        user.role = "admin"
+        user.role = "super_admin"
         db.commit()
 
-        print(f"{username} is now the initial administrator.")
+        print(f"{username} is now the initial super administrator.")
 
     finally:
         db.close()
