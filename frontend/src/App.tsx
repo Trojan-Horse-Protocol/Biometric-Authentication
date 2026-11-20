@@ -971,6 +971,73 @@ function App() {
             )}
           </section>
 
+          {accountRole === "admin" && (
+            <section
+              aria-labelledby="admin-recovery-heading"
+              style={{
+                position: "relative",
+                border: "1px solid #AAB86F",
+                borderRadius: "18px",
+                padding: "1.25rem",
+                marginTop: "2.25rem",
+                backgroundColor: "#FFF8E7",
+                textAlign: "left",
+              }}
+            >
+              <h3 id="admin-recovery-heading" style={{ color: "#4A1938", marginTop: 0 }}>
+                Issue a recovery token
+              </h3>
+              <p style={{ color: "#4A1938" }}>
+                Tokens can only be issued for an existing account.
+              </p>
+              <form onSubmit={issueRecoveryToken} style={{ display: "grid", gap: "0.7rem" }}>
+                <label htmlFor="recovery-user-email">Existing user email or username</label>
+                <input
+                  id="recovery-user-email"
+                  name="recovery-user-email"
+                  type="text"
+                  required
+                  placeholder="user@example.com"
+                  style={{ height: "40px", padding: "0 0.75rem", borderRadius: "12px", border: "1px solid #4A1938" }}
+                />
+                <label htmlFor="recovery-reason">Reason</label>
+                <textarea
+                  id="recovery-reason"
+                  name="recovery-reason"
+                  required
+                  rows={2}
+                  placeholder="Why does this user need recovery?"
+                  style={{ padding: "0.6rem 0.75rem", borderRadius: "12px", border: "1px solid #4A1938", resize: "vertical" }}
+                />
+                <button
+                  type="submit"
+                  disabled={recoveryStatus === "loading"}
+                  style={{
+                    justifySelf: "start",
+                    backgroundColor: recoveryStatus === "loading" ? "#F7B8C8" : "#EE61AA",
+                    color: "#FFFFFF",
+                    border: "1px solid #4A1938",
+                    borderRadius: "999px",
+                    padding: "0.55rem 1.2rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {recoveryStatus === "loading" ? "Issuing..." : "Issue recovery token"}
+                </button>
+              </form>
+              {recoveryToken && (
+                <p aria-live="polite" style={{ wordBreak: "break-word" }}>
+                  <strong>Recovery token:</strong> {recoveryToken}
+                </p>
+              )}
+              {recoveryMessage && recoveryStatus !== "idle" && (
+                <p role={recoveryStatus === "error" ? "alert" : undefined} aria-live="polite" style={{ color: recoveryStatus === "error" ? "#C00000" : "#4A1938", fontWeight: 700 }}>
+                  {recoveryMessage}
+                </p>
+              )}
+            </section>
+          )}
+
           <button
             type="button"
             onClick={async () => {
@@ -1042,61 +1109,6 @@ function App() {
             >
               Recover access
             </h2>
-            <p style={{ color: "#4A1938", margin: "0 0 1.5rem" }}>
-              Use an admin-issued token to register a new passkey.
-            </p>
-
-            <section aria-labelledby="admin-recovery-heading" style={{ textAlign: "left" }}>
-              <h3 id="admin-recovery-heading" style={{ color: "#4A1938" }}>
-                Admin-issued recovery token
-              </h3>
-              <form
-                onSubmit={issueRecoveryToken}
-                style={{ display: "grid", gap: "0.7rem" }}
-              >
-                <label htmlFor="recovery-user-email">User email</label>
-                <input
-                  id="recovery-user-email"
-                  name="recovery-user-email"
-                  type="email"
-                  required
-                  placeholder="user@example.com"
-                  style={{ height: "40px", padding: "0 0.75rem", borderRadius: "12px", border: "1px solid #4A1938" }}
-                />
-                <label htmlFor="recovery-reason">Reason</label>
-                <textarea
-                  id="recovery-reason"
-                  name="recovery-reason"
-                  required
-                  rows={2}
-                  placeholder="Why does this user need recovery?"
-                  style={{ padding: "0.6rem 0.75rem", borderRadius: "12px", border: "1px solid #4A1938", resize: "vertical" }}
-                />
-                <button
-                  type="submit"
-                  disabled={recoveryStatus === "loading"}
-                  style={{
-                    justifySelf: "center",
-                    backgroundColor: recoveryStatus === "loading" ? "#F7B8C8" : "#EE61AA",
-                    color: "#FFFFFF",
-                    border: "1px solid #4A1938",
-                    borderRadius: "999px",
-                    padding: "0.55rem 1.2rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  {recoveryStatus === "loading" ? "Working..." : "Issue recovery token"}
-                </button>
-              </form>
-              {recoveryToken && (
-                <p aria-live="polite" style={{ wordBreak: "break-word" }}>
-                  <strong>Recovery token:</strong> {recoveryToken}
-                </p>
-              )}
-            </section>
-
-            <hr style={{ margin: "1.5rem 0", border: 0, borderTop: "1px solid #D8A6A9" }} />
-
             <section aria-labelledby="user-recovery-heading" style={{ textAlign: "left" }}>
               <h3 id="user-recovery-heading" style={{ color: "#4A1938" }}>
                 Recover your passkey
@@ -1145,21 +1157,6 @@ function App() {
               Back to sign in
             </button>
 
-            <button
-              type="button"
-              onClick={() => setView("recovery")}
-              style={{
-                padding: 0,
-                border: "none",
-                backgroundColor: "transparent",
-                color: "#4A1938",
-                fontFamily: '"Fraunces", Georgia, serif',
-                fontSize: "1rem",
-                cursor: "pointer",
-              }}
-            >
-              Need to recover a passkey? <span style={{ textDecoration: "underline" }}>Recover access</span>
-            </button>
           </div>
         </section>
       )}
