@@ -50,7 +50,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell ${view === "recovery" ? "recovery-mode" : ""}`}>
       {/* Main application layout */}
       <div className="brand-banner" aria-label="Trojan Horse Protocol">
         <span className="brand-star">✦</span>

@@ -29,12 +29,23 @@ button {
 .app-shell {
   position: relative;
   width: min(100% - 2rem, 720px);
-  min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
   overflow: hidden;
   text-align: center;
   background: #e5ffa0;
+}
+
+.recovery-mode {
+  padding-top: 1.25rem;
+}
+
+.recovery-mode .page-title,
+.recovery-mode .page-subtitle,
+.recovery-mode .utility-button,
+.recovery-mode .backend-status {
+  display: none;
 }
 
 .app-shell::before,
@@ -68,6 +79,37 @@ button {
 .auth-panel {
   position: relative;
   z-index: 1;
+}
+
+.recovery-mode .recovery-panel {
+  margin-top: 1rem;
+  padding: 1.25rem;
+}
+
+.recovery-mode .recovery-intro {
+  margin-top: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.recovery-mode .recovery-card {
+  padding: 0.85rem 1rem;
+}
+
+.recovery-mode .recovery-card h3 {
+  margin-bottom: 0.65rem;
+}
+
+.recovery-mode .recovery-form {
+  gap: 0.55rem;
+}
+
+.recovery-mode .field textarea {
+  min-height: 3.2rem;
+  max-height: 4rem;
+}
+
+.recovery-mode .recovery-divider {
+  margin: 0.8rem 0;
 }
 
 .brand-banner {
