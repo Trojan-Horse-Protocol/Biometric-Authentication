@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
 from ..dependencies import require_admin
+from ..email import send_recovery_email
 from ..model import AuditEvent, RecoveryToken, User, utcnow
 from .webauthn_routes import audit
 
@@ -44,6 +45,8 @@ def issue_recovery(user_id: int, body: RecoveryInfo, request: Request, admin: Us
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(404, "User not found")
+    if "@" not in user.username:
+        raise HTTPException(400, "User account does not have an email address.")
     token = secrets.token_urlsafe(32)
 
     db.add(RecoveryToken(user_id=user.id, created_by=admin.id, token_hash=hashlib.sha256(token.encode()).hexdigest(),
@@ -51,8 +54,18 @@ def issue_recovery(user_id: int, body: RecoveryInfo, request: Request, admin: Us
                          revoke_existing=body.revoke_existing))
     db.commit()
 
+    try:
+        send_recovery_email(user.username, token)
+    except Exception as error:
+        audit(db, "recovery_email_fail", False, admin, request, str(error))
+        raise HTTPException(503, "Recovery token was created, but email delivery failed.") from error
+
     audit(db, "recovery_issued", True, admin, request, f"for {user.username}")
-    return {"token": token, "expires_in_minutes": settings.recovery_token_minutes}
+    return {
+        "token": token,
+        "expires_in_minutes": settings.recovery_token_minutes,
+        "email_sent": True,
+    }
 
 
 @router.get("/audit")

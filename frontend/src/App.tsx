@@ -389,7 +389,11 @@ function App() {
         credentials: "include",
         body: JSON.stringify({ revoke_existing: true }),
       });
-      const data: { token?: string; expires_in_minutes?: number } =
+      const data: {
+        token?: string;
+        expires_in_minutes?: number;
+        email_sent?: boolean;
+      } =
         await response.json();
       if (!response.ok || !data.token) {
         throw new Error("The backend could not issue a recovery token.");
@@ -398,7 +402,9 @@ function App() {
       setRecoveryToken(data.token);
       setRecoveryStatus("success");
       setRecoveryMessage(
-        `Token issued. It expires in ${data.expires_in_minutes ?? 30} minutes.`,
+        data.email_sent
+          ? `Token emailed to ${email}. It expires in ${data.expires_in_minutes ?? 30} minutes.`
+          : "Token issued, but it was not emailed.",
       );
     } catch (error) {
       console.error(error);
