@@ -13,6 +13,7 @@ function App() {
   );
   const [recoveryToken, setRecoveryToken] = useState("");
   const [recoveryMessage, setRecoveryMessage] = useState("");
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
 
   // Check whether the backend is available
   async function checkBackend() {
@@ -33,20 +34,76 @@ function App() {
     }
   }
 
-  function issueRecoveryToken(event: FormEvent<HTMLFormElement>) {
+  async function issueRecoveryToken(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const token = `recovery-${crypto.randomUUID().slice(0, 8)}`;
-    setRecoveryToken(token);
-    setRecoveryMessage(
-      "Recovery token created for this demo. The backend endpoint will be connected in a later task.",
-    );
+    setRecoveryBusy(true);
+    setRecoveryMessage("");
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("recovery-user-email") ?? "").trim();
+    const reason = String(formData.get("recovery-reason") ?? "").trim();
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/recovery/admin/tokens`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, reason }),
+      });
+      const data: {
+        token?: string;
+        message?: string;
+        expires_at?: string;
+      } = await response.json();
+
+      if (!response.ok || !data.token) {
+        setRecoveryMessage(data.message ?? "Could not issue a recovery token.");
+        return;
+      }
+
+      setRecoveryToken(data.token);
+      setRecoveryMessage(
+        `Recovery token created. It expires ${new Date(data.expires_at ?? "").toLocaleString()}.`,
+      );
+    } catch (error) {
+      console.error(error);
+      setRecoveryMessage("Could not connect to the recovery service.");
+    } finally {
+      setRecoveryBusy(false);
+    }
   }
 
-  function recoverPasskey(event: FormEvent<HTMLFormElement>) {
+  async function recoverPasskey(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setRecoveryMessage(
-      "The recovery request was captured. Passkey recovery will be connected to the backend endpoint in a later task.",
-    );
+    setRecoveryBusy(true);
+    setRecoveryMessage("");
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("user-recovery-email") ?? "").trim();
+    const token = String(formData.get("user-recovery-token") ?? "").trim();
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/recovery/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, token }),
+      });
+      const data: { message?: string; expires_at?: string } =
+        await response.json();
+
+      if (!response.ok) {
+        setRecoveryMessage(data.message ?? "The recovery token is invalid.");
+        return;
+      }
+
+      setRecoveryMessage(
+        `Recovery token accepted. Continue with passkey registration before ${new Date(data.expires_at ?? "").toLocaleString()}.`,
+      );
+    } catch (error) {
+      console.error(error);
+      setRecoveryMessage("Could not connect to the recovery service.");
+    } finally {
+      setRecoveryBusy(false);
+    }
   }
 
   return (
@@ -126,7 +183,7 @@ function App() {
                 />
               </div>
               <button className="primary-button" type="submit">
-                Issue recovery token
+                {recoveryBusy ? "Issuing token..." : "Issue recovery token"}
               </button>
             </form>
             {recoveryToken ? (
@@ -165,7 +222,9 @@ function App() {
                 />
               </div>
               <button className="primary-button" type="submit">
-                Start passkey recovery
+                {recoveryBusy
+                  ? "Checking token..."
+                  : "Start passkey recovery"}
               </button>
             </form>
           </section>
