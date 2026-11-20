@@ -5,6 +5,7 @@ __pycache__/
 
 # Python virtual environments
 .venv/
+.venv*/
 venv/
 env/
 ENV/
@@ -15,6 +16,7 @@ ENV/
 .ruff_cache/
 .coverage
 htmlcov/
+coverage/
 
 # Environment files and secrets
 .env

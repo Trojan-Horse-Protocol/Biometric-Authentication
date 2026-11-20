@@ -1,39 +1,42 @@
-import os
-
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
-from .recovery import router as recovery_router
+from .config import settings
+from .database import Base, engine
+from .routes import webauthn_routes
 
-load_dotenv()
+from .routes import account_routes, admin_routes, recovery, webauthn_routes
 
-
-def get_allowed_origins() -> list[str]:
-    configured_origins = os.getenv(
-        "BACKEND_CORS_ORIGINS", "http://localhost:5173"
-    )
-    return [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
-
+Base.metadata.create_all(engine)
 
 app = FastAPI(
     title="WebAuthn Project API",
     version="0.1.0",
-    description="Starter API for the club's WebAuthn project.",
+    description="Passkey-protected club portal API.",
+)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.session_secret,
+    https_only=settings.cookie_secure,
+    max_age=8 * 3600,
+    same_site="lax",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_allowed_origins(),
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
-app.include_router(recovery_router)
-
+app.include_router(webauthn_routes.router)
+app.include_router(account_routes.router)
+app.include_router(admin_routes.router)
+app.include_router(recovery.router)
 
 @app.get("/health", tags=["system"])
 def health_check() -> dict[str, str]:
-    """Return a simple response used to verify that the API is running."""
     return {"status": "ok", "service": "webauthn-api"}
