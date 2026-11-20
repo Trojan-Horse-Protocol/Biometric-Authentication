@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import "./App.css";
 
 // Backend API configuration
 const apiBaseUrl =
@@ -49,20 +50,23 @@ function App() {
   }
 
   return (
-    <main
-      style={{
-        fontFamily: "system-ui",
-        maxWidth: 720,
-        margin: "4rem auto",
-        padding: "0 1rem"
-      }}
-    >
+    <main className="app-shell">
       {/* Main application layout */}
-      <h1>WebAuthn Project</h1>
-      <p>Starter frontend for the club&apos;s passkey authentication project.</p>
+      <div className="brand-banner" aria-label="Trojan Horse Protocol">
+        <span className="brand-star">✦</span>
+        <div>
+          <p className="brand-name">Trojan Horse</p>
+          <p className="brand-name">Protocol</p>
+        </div>
+        <span className="brand-star">✦</span>
+      </div>
+      <h1 className="page-title">WebAuthn Project</h1>
+      <p className="page-subtitle">
+        Starter frontend for the club&apos;s passkey authentication project.
+      </p>
 
       {/* Development backend health check */}
-      <button type="button" onClick={checkBackend}>
+      <button className="utility-button" type="button" onClick={checkBackend}>
         Check backend health
       </button>
 
@@ -72,98 +76,108 @@ function App() {
           setView("recovery");
           setRecoveryMessage("");
         }}
-        style={{ marginLeft: "0.75rem" }}
+        className="utility-button"
       >
         Recover access
       </button>
 
-      <p aria-live="polite">Backend status: {backendStatus}</p>
+      <p className="backend-status" aria-live="polite">Backend status: {backendStatus}</p>
 
       {/* Recovery UI */}
       {view === "recovery" && (
         <section
+          className="recovery-panel"
           aria-labelledby="recovery-heading"
-          style={{
-            border: "2px solid #222",
-            borderRadius: "12px",
-            padding: "2rem",
-            maxWidth: "520px",
-            margin: "2rem auto",
-          }}
         >
-          <h2 id="recovery-heading">Recover access</h2>
-          <p>
+          <div className="section-heading">
+            <span className="heading-star">✦</span>
+            <h2 id="recovery-heading">Recover access</h2>
+            <span className="heading-star">✦</span>
+          </div>
+          <p className="recovery-intro">
             Use an admin-issued recovery token to register a new passkey for an
             existing account.
           </p>
 
-          <section aria-labelledby="admin-recovery-heading">
+          <section className="recovery-card" aria-labelledby="admin-recovery-heading">
             <h3 id="admin-recovery-heading">Admin-issued recovery token</h3>
             <form
+              className="recovery-form"
               onSubmit={issueRecoveryToken}
-              style={{ display: "grid", gap: "0.75rem" }}
             >
-              <label htmlFor="recovery-user-email">User email</label>
-              <input
-                id="recovery-user-email"
-                name="recovery-user-email"
-                type="email"
-                placeholder="user@example.com"
-                required
-              />
-              <label htmlFor="recovery-reason">Reason</label>
-              <textarea
-                id="recovery-reason"
-                name="recovery-reason"
-                placeholder="Why does this user need recovery?"
-                required
-                rows={3}
-              />
-              <button type="submit">Issue recovery token</button>
+              <div className="field">
+                <label htmlFor="recovery-user-email">User email</label>
+                <input
+                  id="recovery-user-email"
+                  name="recovery-user-email"
+                  type="email"
+                  placeholder="user@example.com"
+                  required
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="recovery-reason">Reason</label>
+                <textarea
+                  id="recovery-reason"
+                  name="recovery-reason"
+                  placeholder="Why does this user need recovery?"
+                  required
+                  rows={3}
+                />
+              </div>
+              <button className="primary-button" type="submit">
+                Issue recovery token
+              </button>
             </form>
             {recoveryToken ? (
-              <p aria-live="polite">
+              <p className="token-output" aria-live="polite">
                 <strong>Recovery token:</strong> {recoveryToken}
               </p>
             ) : null}
           </section>
 
-          <hr />
+          <div className="recovery-divider" />
 
-          <section aria-labelledby="user-recovery-heading">
+          <section className="recovery-card" aria-labelledby="user-recovery-heading">
             <h3 id="user-recovery-heading">Recover your passkey</h3>
             <form
+              className="recovery-form"
               onSubmit={recoverPasskey}
-              style={{ display: "grid", gap: "0.75rem" }}
             >
-              <label htmlFor="user-recovery-email">Account email</label>
-              <input
-                id="user-recovery-email"
-                name="user-recovery-email"
-                type="email"
-                placeholder="user@example.com"
-                required
-              />
-              <label htmlFor="user-recovery-token">Recovery token</label>
-              <input
-                id="user-recovery-token"
-                name="user-recovery-token"
-                type="text"
-                placeholder="Paste your recovery token"
-                required
-              />
-              <button type="submit">Start passkey recovery</button>
+              <div className="field">
+                <label htmlFor="user-recovery-email">Account email</label>
+                <input
+                  id="user-recovery-email"
+                  name="user-recovery-email"
+                  type="email"
+                  placeholder="user@example.com"
+                  required
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="user-recovery-token">Recovery token</label>
+                <input
+                  id="user-recovery-token"
+                  name="user-recovery-token"
+                  type="text"
+                  placeholder="Paste your recovery token"
+                  required
+                />
+              </div>
+              <button className="primary-button" type="submit">
+                Start passkey recovery
+              </button>
             </form>
           </section>
 
           {recoveryMessage ? (
-            <p aria-live="polite">{recoveryMessage}</p>
+            <p className="recovery-message" aria-live="polite">{recoveryMessage}</p>
           ) : null}
 
           <button
+            className="text-button"
             type="button"
             onClick={() => setView("login")}
-            style={{ marginTop: "1rem" }}
           >
             Back to sign in
           </button>
@@ -173,6 +187,7 @@ function App() {
       {/* Registration view */}
       {view === "register" && (
         <section
+          className="auth-panel"
           aria-labelledby="registration-heading"
           style={{
             border: "2px solid #222",
@@ -240,6 +255,7 @@ function App() {
       {/* Login view */}
       {view === "login" && (
         <section
+          className="auth-panel"
           aria-labelledby="login-heading"
           style={{
             border: "2px solid #222",
