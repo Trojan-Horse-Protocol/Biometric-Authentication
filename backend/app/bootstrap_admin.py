@@ -42,7 +42,7 @@ def main() -> None:
         user.role = "super_admin"
         db.commit()
 
-        print(f"{username} is now the initial administrator.")
+        print(f"{username} is now the initial super administrator.")
 
     finally:
         db.close()
