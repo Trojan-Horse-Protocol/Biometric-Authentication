@@ -380,7 +380,7 @@ function App() {
         await usersResponse.json();
       const user = users.find((candidate) => candidate.username.toLowerCase() === email);
       if (!user) {
-        throw new Error("No account was found for that email.");
+        throw new Error("Account not found.");
       }
 
       const response = await fetch(`${apiBaseUrl}/admin/users/${user.id}/recovery`, {
@@ -413,6 +413,12 @@ function App() {
         error instanceof Error ? error.message : "Could not issue a recovery token.",
       );
     }
+  }
+
+  function resetRecoveryState() {
+    setRecoveryToken("");
+    setRecoveryMessage("");
+    setRecoveryStatus("idle");
   }
 
   async function recoverPasskey(event: FormEvent<HTMLFormElement>) {
@@ -977,7 +983,7 @@ function App() {
             )}
           </section>
 
-          {accountRole === "admin" && (
+          {(accountRole === "admin" || accountRole === "super_admin") && (
             <section
               aria-labelledby="admin-recovery-heading"
               style={{
@@ -1051,7 +1057,7 @@ function App() {
                 method: "POST",
                 credentials: "include",
               });
-
+              resetRecoveryState();
               setIsLoggedIn(false);
               setAuthStatus("unauthenticated");
               setLoginStatus("idle");
@@ -1157,7 +1163,10 @@ function App() {
             )}
             <button
               type="button"
-              onClick={() => setView("login")}
+              onClick={() => {
+                resetRecoveryState();
+                setView("login");
+              }}
               style={{ border: 0, background: "transparent", color: "#4A1938", textDecoration: "underline" }}
             >
               Back to sign in
@@ -1857,7 +1866,10 @@ function App() {
 
             <button
               type="button"
-              onClick={() => setView("recovery")}
+              onClick={() => {
+                resetRecoveryState();
+                setView("recovery");
+              }}
               style={{
                 padding: 0,
                 border: "none",

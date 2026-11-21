@@ -1,5 +1,7 @@
 """SMTP email delivery for recovery tokens."""
 
+# This currently is not functional (& emails are not required for account registration).
+
 from email.message import EmailMessage
 import smtplib
 
