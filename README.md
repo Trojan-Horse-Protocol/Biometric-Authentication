@@ -90,3 +90,52 @@ npm run dev
 Open the URL printed by Vite, normally http://localhost:5173.
 
 The frontend includes a button that checks the backend health endpoint.
+
+---
+
+## Run with Docker Compose
+
+This starts the backend and frontend containers for local development. The frontend is served by Vite's development server; this Compose setup is not intended as a production deployment.
+
+### Prerequisites
+
+- Docker Desktop on Windows or macOS, or Docker Engine with the Docker Compose plugin on Linux
+- Docker must be running
+- Ports `5173` and `8000` must be available
+
+Verify Docker and Compose are available:
+
+```bash
+docker --version
+docker compose version
+```
+
+### Configure and start
+
+From the repository root (the directory containing `docker-compose.yml`), create the environment file if you have not already created one:
+
+macOS/Linux:
+
+```bash
+cp .env.example .env
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Set `SESSION_SECRET` in `.env` to a secure random value. For local use, leave `RP_ID`, `ORIGIN`, and `BACKEND_CORS_ORIGINS` set to the provided `localhost` values.
+
+Build the images and start both services:
+
+```bash
+docker compose up --build
+```
+
+Open the frontend at <http://localhost:5173>. The backend health endpoint is at <http://localhost:8000/health>, and its interactive API documentation is at <http://localhost:8000/docs>.
+
+Press `Ctrl+C` to stop the services. To start them in the background instead, run `docker compose up --build -d`; view their logs with `docker compose logs -f` and stop them with `docker compose down`.
+
+For a public production deployment, use a production frontend server, HTTPS, and set the WebAuthn `RP_ID`, `ORIGIN`, and CORS origins to match your deployed domain. The development server and localhost settings above are not suitable for that use.
