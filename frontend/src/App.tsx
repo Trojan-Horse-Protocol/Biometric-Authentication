@@ -10,6 +10,7 @@ import homeStarOutlinePlum from "./assets/home-star-outline-plum.png";
 import homeStarOutlinePink from "./assets/home-star-outline-pink.png";
 import homeStarPink from "./assets/home-star-pink.png";
 import homeStarPlum from "./assets/home-star-plum.png";
+import AdminUIView from "./AdminUIView";
 
 // Backend API configuration
 const apiBaseUrl =
@@ -838,6 +839,25 @@ function App() {
               </>
             )}
           </section>
+
+          {accountStatus === "ready" && accountRole === "admin" && (
+            <section
+              aria-label="Administration"
+              style={{
+                margin: "2rem auto 0",
+                maxWidth: "980px",
+                border: "2px solid #AAB86F",
+                borderRadius: "22px",
+                backgroundColor: "#FFF8E7",
+                overflow: "hidden",
+              }}
+            >
+              <AdminUIView
+                currentUserRole={accountRole}
+                apiBaseUrl={apiBaseUrl}
+              />
+            </section>
+          )}
 
           <button
             type="button"
