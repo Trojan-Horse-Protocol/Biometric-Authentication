@@ -1048,6 +1048,7 @@ function App() {
                   {recoveryMessage}
                 </p>
               )}
+            </section>
           {accountStatus === "ready" && (accountRole === "admin" || accountRole === "super_admin") && (
             <section
               aria-label="Administration"
