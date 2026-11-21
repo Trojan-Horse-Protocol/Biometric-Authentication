@@ -37,6 +37,10 @@ Copy-Item .env.example .env
 
 Do not commit `.env`. It is ignored by Git.
 
+Recovery tokens are emailed automatically when an admin issues one. Configure
+`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, and
+`RECOVERY_EMAIL_FROM` in `.env` before using the admin recovery form.
+
 Generate a secret to add into the `.env` file:
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"

@@ -10,10 +10,13 @@ from sqlalchemy.orm import Session
 from ..config import settings
 from ..database import get_db
 from ..dependencies import require_admin
+from ..email import send_recovery_email
 from ..model import AuditEvent, RecoveryToken, User, utcnow
 from .webauthn_routes import audit
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+
+ROLE_RANK = {"member": 0, "admin": 1, "super_admin": 2}
 
 class RoleInfo(BaseModel):
     role: Literal["member", "admin"]
@@ -31,12 +34,12 @@ def set_role(user_id: int, body: RoleInfo, request: Request, admin: User = Depen
 
     if not user:
         raise HTTPException(404, "user not found")
-
-    if admin.role != "super_admin":
-        raise HTTPException(403, "Super admin only")
-
     if user.role == "super_admin":
-        raise HTTPException(400, "cannot change super admin")
+        raise HTTPException(403, "The super admin cannot be changed")
+    if ROLE_RANK[admin.role] <= ROLE_RANK[user.role]:
+        raise HTTPException(403, "Administrators can only manage lower-tier accounts")
+    if body.role == "super_admin":
+        raise HTTPException(403, "Super admin role can only be assigned during bootstrap")
 
     user.role = body.role
     db.commit()
@@ -48,6 +51,19 @@ def issue_recovery(user_id: int, body: RecoveryInfo, request: Request, admin: Us
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(404, "User not found")
+    if user.id == admin.id:
+        raise HTTPException(403, "You cannot issue a recovery token for yourself")
+    if ROLE_RANK[admin.role] <= ROLE_RANK[user.role]:
+        raise HTTPException(403, "Administrators can only generate recovery tokens for lower-tier accounts")
+
+    db.query(RecoveryToken).filter(
+        RecoveryToken.user_id == user.id,
+        RecoveryToken.used == False,
+    ).update({"used": True})
+
+    if body.revoke_existing:
+        user.credentials.clear()
+
     token = secrets.token_urlsafe(32)
 
     db.add(RecoveryToken(user_id=user.id, created_by=admin.id, token_hash=hashlib.sha256(token.encode()).hexdigest(),
@@ -55,8 +71,20 @@ def issue_recovery(user_id: int, body: RecoveryInfo, request: Request, admin: Us
                          revoke_existing=body.revoke_existing))
     db.commit()
 
+    email_sent = "@" in user.username
+    if email_sent:
+        try:
+            send_recovery_email(user.username, token)
+        except Exception as error:
+            audit(db, "recovery_email_fail", False, admin, request, str(error))
+            raise HTTPException(503, "Recovery token was created, but email delivery failed.") from error
+
     audit(db, "recovery_issued", True, admin, request, f"for {user.username}")
-    return {"token": token, "expires_in_minutes": settings.recovery_token_minutes}
+    return {
+        "token": token,
+        "expires_in_minutes": settings.recovery_token_minutes,
+        "email_sent": email_sent,
+    }
 
 
 @router.get("/audit")

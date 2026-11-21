@@ -11,6 +11,6 @@ def current_user(request: Request, db: Session = Depends(get_db)) -> User:
     return user
 
 def require_admin(user: User = Depends(current_user)) -> User:
-    if user.role not in ("admin", "super_admin"):
+    if user.role not in {"admin", "super_admin"}:
         raise HTTPException(403, "Admin only")
     return user

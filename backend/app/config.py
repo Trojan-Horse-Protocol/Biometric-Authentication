@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     max_failed_logins: int = 5
     lockout_minutes: int = 10
     recovery_token_minutes: int = 30
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    recovery_email_from: str | None = None
+    smtp_use_tls: bool = True
 
     @property
     def allowed_origins(self) -> list[str]:

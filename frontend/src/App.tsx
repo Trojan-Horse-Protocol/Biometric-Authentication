@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import logo from "./assets/SLP_logo.png";
 import registrationTape from "./assets/registration-tape.png";
 import star1 from "./assets/star1.png";
@@ -68,17 +68,21 @@ type Passkey = {
 
 type AccountStatus = "idle" | "loading" | "ready" | "error";
 type PasskeyActionStatus = "idle" | "loading" | "success" | "error";
+type RecoveryStatus = "idle" | "loading" | "success" | "error";
 
 function App() {
   // Component state
   const [backendStatus, setBackendStatus] = useState("Not checked");
-  const [view, setView] = useState<"register" | "login">("register");
+  const [view, setView] = useState<"register" | "login" | "recovery">("register");
   // Controls whether the logged-in home page is displayed.
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Error message state
   const [registrationError, setRegistrationError] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [recoveryToken, setRecoveryToken] = useState("");
+  const [recoveryMessage, setRecoveryMessage] = useState("");
+  const [recoveryStatus, setRecoveryStatus] = useState<RecoveryStatus>("idle");
 
   // Authentication status state
   const [authStatus, setAuthStatus] = useState<
@@ -350,6 +354,146 @@ function App() {
         error instanceof Error
           ? error.message
           : "Passkey could not be removed.",
+      );
+    }
+  }
+
+  async function issueRecoveryToken(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRecoveryStatus("loading");
+    setRecoveryMessage("");
+    setRecoveryToken("");
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("recovery-user-email") ?? "")
+      .trim()
+      .toLowerCase();
+
+    try {
+      const usersResponse = await fetch(`${apiBaseUrl}/admin/users`, {
+        credentials: "include",
+      });
+      if (!usersResponse.ok) {
+        throw new Error("Only an authenticated admin can issue recovery tokens.");
+      }
+
+      const users: Array<{ id: number; username: string }> =
+        await usersResponse.json();
+      const user = users.find((candidate) => candidate.username.toLowerCase() === email);
+      if (!user) {
+        throw new Error("Account not found.");
+      }
+
+      const response = await fetch(`${apiBaseUrl}/admin/users/${user.id}/recovery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ revoke_existing: true }),
+      });
+      const data: {
+        token?: string;
+        expires_in_minutes?: number;
+        email_sent?: boolean;
+      } =
+        await response.json();
+      if (!response.ok || !data.token) {
+        throw new Error("The backend could not issue a recovery token.");
+      }
+
+      setRecoveryToken(data.token);
+      setRecoveryStatus("success");
+      setRecoveryMessage(
+        data.email_sent
+          ? `Token emailed to ${email}. It expires in ${data.expires_in_minutes ?? 30} minutes.`
+          : "Token issued, but it was not emailed.",
+      );
+    } catch (error) {
+      console.error(error);
+      setRecoveryStatus("error");
+      setRecoveryMessage(
+        error instanceof Error ? error.message : "Could not issue a recovery token.",
+      );
+    }
+  }
+
+  function resetRecoveryState() {
+    setRecoveryToken("");
+    setRecoveryMessage("");
+    setRecoveryStatus("idle");
+  }
+
+  async function recoverPasskey(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setRecoveryStatus("loading");
+    setRecoveryMessage("");
+
+    const formData = new FormData(event.currentTarget);
+    const token = String(formData.get("user-recovery-token") ?? "").trim();
+
+    try {
+      const beginResponse = await fetch(`${apiBaseUrl}/recovery/begin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ token }),
+      });
+      if (!beginResponse.ok) {
+        throw new Error("The recovery token is invalid or expired.");
+      }
+
+      const registrationOptions = await beginResponse.json();
+      const publicKeyOptions = {
+        ...registrationOptions,
+        challenge: base64UrlToUint8Array(registrationOptions.challenge),
+        user: {
+          ...registrationOptions.user,
+          id: base64UrlToUint8Array(registrationOptions.user.id),
+        },
+        excludeCredentials: registrationOptions.excludeCredentials?.map(
+          (credential: { id: string; type: string }) => ({
+            ...credential,
+            id: base64UrlToUint8Array(credential.id),
+          }),
+        ),
+      } as PublicKeyCredentialCreationOptions;
+
+      const credential = await navigator.credentials.create({
+        publicKey: publicKeyOptions,
+      });
+      if (!(credential instanceof PublicKeyCredential)) {
+        throw new Error("No passkey credential was created.");
+      }
+
+      const attestation = credential.response as AuthenticatorAttestationResponse;
+      const verifyResponse = await fetch(`${apiBaseUrl}/recovery/finish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          credential: {
+            id: credential.id,
+            rawId: arrayBufferToBase64Url(credential.rawId),
+            type: credential.type,
+            response: {
+              clientDataJSON: arrayBufferToBase64Url(attestation.clientDataJSON),
+              attestationObject: arrayBufferToBase64Url(attestation.attestationObject),
+            },
+          },
+        }),
+      });
+      if (!verifyResponse.ok) {
+        throw new Error("Passkey recovery verification failed.");
+      }
+
+      setRecoveryStatus("success");
+      setRecoveryMessage("Passkey recovery complete. You are now signed in.");
+      setIsLoggedIn(true);
+      setAuthStatus("authenticated");
+    } catch (error) {
+      console.error(error);
+      setRecoveryStatus("error");
+      setRecoveryMessage(
+        error instanceof Error ? error.message : "Passkey recovery failed.",
       );
     }
   }
@@ -840,7 +984,71 @@ function App() {
             )}
           </section>
 
-          {accountStatus === "ready" && accountRole === "admin" && (
+          {(accountRole === "admin" || accountRole === "super_admin") && (
+            <section
+              aria-labelledby="admin-recovery-heading"
+              style={{
+                position: "relative",
+                border: "1px solid #AAB86F",
+                borderRadius: "18px",
+                padding: "1.25rem",
+                marginTop: "2.25rem",
+                backgroundColor: "#FFF8E7",
+                textAlign: "left",
+              }}
+            >
+              <h3 id="admin-recovery-heading" style={{ color: "#4A1938", marginTop: 0 }}>
+                Issue a recovery token
+              </h3>
+              <p style={{ color: "#4A1938" }}>
+                Tokens can only be issued for an existing account.
+              </p>
+              <form onSubmit={issueRecoveryToken} style={{ display: "grid", gap: "0.7rem" }}>
+                <label htmlFor="recovery-user-email">Existing user email or username</label>
+                <input
+                  id="recovery-user-email"
+                  name="recovery-user-email"
+                  type="text"
+                  required
+                  placeholder="user@example.com"
+                  style={{ height: "40px", padding: "0 0.75rem", borderRadius: "12px", border: "1px solid #4A1938" }}
+                />
+                <label htmlFor="recovery-reason">Reason</label>
+                <textarea
+                  id="recovery-reason"
+                  name="recovery-reason"
+                  required
+                  rows={2}
+                  placeholder="Why does this user need recovery?"
+                  style={{ padding: "0.6rem 0.75rem", borderRadius: "12px", border: "1px solid #4A1938", resize: "vertical" }}
+                />
+                <button
+                  type="submit"
+                  disabled={recoveryStatus === "loading"}
+                  style={{
+                    justifySelf: "start",
+                    backgroundColor: recoveryStatus === "loading" ? "#F7B8C8" : "#EE61AA",
+                    color: "#FFFFFF",
+                    border: "1px solid #4A1938",
+                    borderRadius: "999px",
+                    padding: "0.55rem 1.2rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {recoveryStatus === "loading" ? "Issuing..." : "Issue recovery token"}
+                </button>
+              </form>
+              {recoveryToken && (
+                <p aria-live="polite" style={{ wordBreak: "break-word" }}>
+                  <strong>Recovery token:</strong> {recoveryToken}
+                </p>
+              )}
+              {recoveryMessage && recoveryStatus !== "idle" && (
+                <p role={recoveryStatus === "error" ? "alert" : undefined} aria-live="polite" style={{ color: recoveryStatus === "error" ? "#C00000" : "#4A1938", fontWeight: 700 }}>
+                  {recoveryMessage}
+                </p>
+              )}
+          {accountStatus === "ready" && (accountRole === "admin" || accountRole === "super_admin") && (
             <section
               aria-label="Administration"
               style={{
@@ -866,7 +1074,7 @@ function App() {
                 method: "POST",
                 credentials: "include",
               });
-
+              resetRecoveryState();
               setIsLoggedIn(false);
               setAuthStatus("unauthenticated");
               setLoginStatus("idle");
@@ -888,6 +1096,100 @@ function App() {
           >
             Log out
           </button>
+        </section>
+      )}
+
+      {/* Recovery view */}
+      {authStatus === "unauthenticated" && !isLoggedIn && view === "recovery" && (
+        <section
+          aria-labelledby="recovery-heading"
+          style={{
+            backgroundColor: "#FFF8E7",
+            borderRadius: "12px",
+            boxShadow: "0 8px 20px rgba(60, 45, 20, 0.18)",
+            padding: "1rem",
+            maxWidth: "560px",
+            width: "100%",
+            boxSizing: "border-box",
+            margin: "4rem auto 2rem",
+            textAlign: "center",
+          }}
+        >
+          <img
+            src={logo}
+            alt="Trojan Horse Protocol logo"
+            style={{ width: "120px", height: "120px", objectFit: "contain" }}
+          />
+          <div
+            style={{
+              border: "1px solid #4A1938",
+              borderRadius: "12px",
+              padding: "1.5rem 2rem 2rem",
+            }}
+          >
+            <h2
+              id="recovery-heading"
+              style={{
+                color: "#4A1938",
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontSize: "2.1rem",
+                margin: "0 0 0.6rem",
+              }}
+            >
+              Recover access
+            </h2>
+            <section aria-labelledby="user-recovery-heading" style={{ textAlign: "left" }}>
+              <h3 id="user-recovery-heading" style={{ color: "#4A1938" }}>
+                Recover your passkey
+              </h3>
+              <form
+                onSubmit={recoverPasskey}
+                style={{ display: "grid", gap: "0.7rem" }}
+              >
+                <label htmlFor="user-recovery-token">Recovery token</label>
+                <input
+                  id="user-recovery-token"
+                  name="user-recovery-token"
+                  type="text"
+                  required
+                  placeholder="Paste your recovery token"
+                  style={{ height: "40px", padding: "0 0.75rem", borderRadius: "12px", border: "1px solid #4A1938" }}
+                />
+                <button
+                  type="submit"
+                  disabled={recoveryStatus === "loading"}
+                  style={{
+                    justifySelf: "center",
+                    backgroundColor: recoveryStatus === "loading" ? "#F7B8C8" : "#EE61AA",
+                    color: "#FFFFFF",
+                    border: "1px solid #4A1938",
+                    borderRadius: "999px",
+                    padding: "0.55rem 1.2rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {recoveryStatus === "loading" ? "Recovering..." : "Start passkey recovery"}
+                </button>
+              </form>
+            </section>
+
+            {recoveryMessage && (
+              <p role={recoveryStatus === "error" ? "alert" : undefined} aria-live="polite" style={{ color: recoveryStatus === "error" ? "#C00000" : "#4A1938", fontWeight: 700 }}>
+                {recoveryMessage}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                resetRecoveryState();
+                setView("login");
+              }}
+              style={{ border: 0, background: "transparent", color: "#4A1938", textDecoration: "underline" }}
+            >
+              Back to sign in
+            </button>
+
+          </div>
         </section>
       )}
 
@@ -1577,6 +1879,25 @@ function App() {
             >
               Need an account?{" "}
               <span style={{ textDecoration: "underline" }}>Create one</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                resetRecoveryState();
+                setView("recovery");
+              }}
+              style={{
+                padding: 0,
+                border: "none",
+                backgroundColor: "transparent",
+                color: "#4A1938",
+                fontFamily: '"Fraunces", Georgia, serif',
+                fontSize: "1rem",
+                cursor: "pointer",
+              }}
+            >
+              Can&apos;t access your passkey? <span style={{ textDecoration: "underline" }}>Recover it</span>
             </button>
 
             <span

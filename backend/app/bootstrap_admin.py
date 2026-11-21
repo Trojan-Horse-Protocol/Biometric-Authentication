@@ -17,16 +17,11 @@ def main() -> None:
     db = SessionLocal()
 
     try:
-        existing_admin = (
-             db.query(User)
-            .filter(User.role.in_(["admin", "super_admin"]))
-            .first()
-        )
-
-        if existing_admin:
+        existing_super = db.query(User).filter(User.role == "super_admin").first()
+        if existing_super:
             print(
-                f"An administrator already exists: {existing_admin.username}. "
-                "Use the protected admin route to promote additional users."
+                f"A super administrator already exists: {existing_super.username}. "
+                "Use the protected admin route to manage lower-tier accounts."
             )
             raise SystemExit(1)
 
@@ -34,6 +29,14 @@ def main() -> None:
 
         if user is None:
             print(f"User not found: {username}")
+            raise SystemExit(1)
+
+        existing_admin = db.query(User).filter(User.role == "admin").first()
+        if existing_admin and existing_admin.id != user.id:
+            print(
+                f"Another administrator already exists: {existing_admin.username}. "
+                "A super administrator must be assigned to the existing initial admin account."
+            )
             raise SystemExit(1)
 
         user.role = "super_admin"
