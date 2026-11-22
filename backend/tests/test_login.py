@@ -2,7 +2,7 @@ from types import SimpleNamespace
 from webauthn.helpers import bytes_to_base64url
 from backend.app.model import User
 from backend.app.routes import webauthn_routes
-from .help import make_user
+from help import make_user
 
 #ref: https://docs.pytest.org/en/stable/how-to/usage.html, https://docs.pytest.org/en/stable/reference/reference.html#pytest.monkeypatch.monkeypatch
 
